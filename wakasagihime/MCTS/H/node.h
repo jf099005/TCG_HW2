@@ -6,7 +6,7 @@
 #include "lib/types.h"
 #include "lib/helper.h"
 const int MaxChild = 100;
-const int MaxNode = 1e6;
+const int MaxNode = 100000;
 
 using namespace std;
 
@@ -61,6 +61,12 @@ typedef struct MCT_node{
         sq_score_sum = 0;
         can_expand = 1;
     }
+    /*    constexpr Move &operator=(const Move &other)
+    {
+        raw = other.raw;
+        return *this;
+    }*/
+    // constexpr MCT_node &operator = (const MCT_node& other) = default;
 }
 Node;
 

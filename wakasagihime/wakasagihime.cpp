@@ -5,7 +5,8 @@
 #include "lib/marisa.h"
 #include "lib/types.h"
 #include "lib/helper.h"
-#define DEBUG 1
+// #define TEST 1
+// #define DEBUG 1
 #define USE_MCTS 1
 
 #ifdef USE_MCTS
@@ -54,26 +55,60 @@ int main()
      */
     std::string line;
     /* read input board state */
+    
+    #ifdef USE_MCTS
+        Position pos_init;
+        MCTS_agent agent(Red, pos_init, 1, 5);
+    #endif
+
     while (std::getline(std::cin, line)) {
         Position pos(line);
         
         #ifdef USE_MCTS
-            MCTS_agent agent(pos.due_up(), pos, 1, 5);
-            #ifdef DEBUG
-                info <<"root idx: " << agent.root_idx <<endl;
-                info << "pv at beginning:" << agent.search_pv(pos) <<endl;
+        
+            agent.reset(pos.due_up(), pos);
+
+            #ifdef TEST
+                info << "current pos:------------------------\n";
+                info << pos <<endl;
             #endif
 
-            agent.MCTS_simulatie(100, 100);
-
             #ifdef DEBUG
-                info << "candidate moves after search:\n";
-                info <<agent.Nodes[agent.root_idx].Nchild <<endl;
-                for(int i=0;i<agent.Nodes[agent.root_idx].Nchild; i++){
-                    info << agent.Nodes[agent.root_idx].c_move[i] <<endl;
+                agent.MCTS_iteration();
+                Node root = agent.Nodes[agent.root_idx];
+                cout <<"N:" << root.Ntotal <<endl;
+                cout<<"Child: "<<root.Nchild <<endl;
+                for(int i=0; i<root.Nchild; i++){
+                    cout<<"\tchild id:"<< root.c_id[i] <<"\n";
+                    cout<<"\tmove:"<<root.c_move[i]<<endl;
                 }
+                cout<<"W:" << root.Mean <<endl;
+                for(int i=0;i<agent.maximum_node_idx; i++){
+                    Node node = agent.Nodes[i];
+                    cout <<"node "<<i<<endl;
+                    cout <<"\tN:" << node.Ntotal <<endl;
+                    cout<<"\tChild: "<<node.Nchild <<endl;
+                    cout<<"\tW:" <<node.score_sum <<"/" <<node.Ntotal <<"=" << node.Mean <<endl;
+
+                }
+                Move choice = agent.opt_solution(0,0);
+                cout<<"winrate:"<<agent.Nodes[agent.root_idx].Mean <<endl;
+                info <<"choice:" << choice;
+
+                return 0;
+
             #endif
-            Move nx_move = agent.opt_solution(100, 0);
+
+            agent.MCTS_simulatie(100);
+            Move nx_move = agent.opt_solution(0,0);
+
+            #ifdef DEBUG
+            
+                cout<<"winrate:"<<agent.Nodes[agent.root_idx].Mean <<endl;
+                info <<"chlice:" << nx_move;
+
+                return 0;
+            #endif
         #else
             // -------OLD MCS-----------------------------
 
@@ -109,13 +144,14 @@ int main()
 
         info << nx_move;
 
-        #ifdef DEBUG
+        #ifdef TEST
             pos.do_move(nx_move);
             info << pos;
+            info << pos.toFEN() <<endl;
             if(pos.winner() != NO_COLOR){
                 info << "game end\n";
-                info << pos.winner() << '\n';
-                break;
+                info << ((pos.winner()==Black)?"BLACK":"WHITE") << '\n';
+                // break;
             }
         #endif
 

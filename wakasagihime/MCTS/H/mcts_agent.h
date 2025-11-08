@@ -9,15 +9,17 @@ typedef int Score;
 
 class MCTS_agent{
     public:
-        MCTS_agent(Color p_c, Position initial_pos, double initial_coeff = 1.0, int n_simulate_leaf = 5);
+        // MCTS_agent() = default;
 
-        void MCTS_simulatie(double time_constraint, int N_simulate);
-        void MCTS_iteration();
+        MCTS_agent(Color p_c, Position initial_pos, double initial_coeff = 1.0, int n_simulate_leaf = 5);
+        void reset(Color p_c, Position initial_pos);
+        void MCTS_simulatie(int N_simulate, double time_constraint = 5.0);
+        bool MCTS_iteration();//return true if early-stop
         Move opt_solution(double time_constraint, int N_simulate = 0);
         
-        const Color player_color;
+        Color player_color;
         // when expand, simulate n_simulate_expand times for each new leaves 
-        const int n_simulate_expand;
+        int n_simulate_expand;
 
 
     
@@ -28,26 +30,25 @@ class MCTS_agent{
             int maximum_node_idx;
 
             int create_root(const Color &cur_color){
-                Nodes[maximum_node_idx] =  Node(cur_color,  maximum_node_idx);
-                maximum_node_idx++;
-                return maximum_node_idx;
+                Node root =  Node(cur_color,  maximum_node_idx);
+                Nodes[maximum_node_idx] = root;
+                return maximum_node_idx++;
             }
 
-            int create_sucessor(const int &parent_idx){
+            int create_sucessor(int parent_idx){
                 Nodes[maximum_node_idx] = Node(parent_idx, Nodes[parent_idx]);
-                maximum_node_idx++;
-                return maximum_node_idx;
+                return maximum_node_idx++;
             }
 
 
         //MCTS ELEMENTS
             int root_idx;
             double Exploration_coeff;
-            //return the index of the leaf in PV
-            int search_pv(Position &pos);
+            //return the index and the position of the leaf in PV
+            pair<int, Position> search_pv();
 
             //find the maximum children of the given node
-            int select_maximum(int node_idx);
+            int select_maximum_child_idx(int node_idx);
 
             void expand(int node_idx, Position node_pos);
 
