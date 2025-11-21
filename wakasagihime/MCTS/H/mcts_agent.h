@@ -1,11 +1,11 @@
 #include"node.h"
+#include"simulator.h"
 #ifndef _MCTS_H_
 #define _MCTS_H_
 
 #define DEFAULT_N_SIMULATE 1
 
 //Red for positive score, Black for negative score
-typedef int Score;
 
 class MCTS_agent{
     public:
@@ -27,17 +27,18 @@ class MCTS_agent{
         //node operations
             Position root_pos;
             Node *Nodes;
+            Node* root;
             int maximum_node_idx;
 
-            int create_root(const Color &cur_color){
+            Node* create_root(const Color &cur_color){
                 Node root =  Node(cur_color,  maximum_node_idx);
                 Nodes[maximum_node_idx] = root;
-                return maximum_node_idx++;
+                return Nodes + (maximum_node_idx++);
             }
 
-            int create_sucessor(int parent_idx, Move child_move){
-                Nodes[maximum_node_idx] = Node(parent_idx, Nodes[parent_idx], child_move);
-                return maximum_node_idx++;
+            Node* create_sucessor(Node* parent, Move child_move){
+                Nodes[maximum_node_idx] = Node(maximum_node_idx, parent, child_move);
+                return Nodes + (maximum_node_idx++);
             }
 
 
@@ -45,13 +46,18 @@ class MCTS_agent{
             int root_idx;
             double Exploration_coeff;
             //return the index and the position of the leaf in PV
-            pair<int, Position> search_pv();
+            pair<Node*, Position> search_pv();
 
-            //find the maximum children index in Nodes
-            int select_maximum_child(int node_idx);
+            inline Node* get_child(Node* node, int child_idx){
+                assert(node->Nchild > child_idx);
+                return Nodes + node->c_id[child_idx];
+            }
+
+            //find the maximum children
+            Node* select_maximum_child(Node* node);
             // Node select_maximum_child_idx(int node_idx);
 
-            void expand(int node_idx, Position node_pos);
+            void expand(Node* node, Position node_pos);
 
             //return the result of simulate in a given number of simulation
             //w.r.t. the player of pos
@@ -59,12 +65,12 @@ class MCTS_agent{
             Score pos_simulate(Position pos);
 
             //used for back_propregation
-            void update_node(int node_idx, Score score, int n_simulate);//w: number of winning, n: total number of simulation
-            void back_propregation(int leaf_idx, Score score, int n_simulate);
+            void update_node(Node* node, Score score, int n_simulate);//w: number of winning, n: total number of simulation
+            void back_propregation(Node* leaf, Score score, int n_simulate);
 
         //utils for expansion
             //UCB-score of node_id w.r.t. its parent color
-            long double UCB(int node_idx, int parent_idx);
+            long double UCB(Node* node, Node* parent);
 
 
 };

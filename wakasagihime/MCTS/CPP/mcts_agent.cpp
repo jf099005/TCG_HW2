@@ -18,7 +18,8 @@ MCTS_agent::MCTS_agent(Color p_c, Position initial_pos, double initial_coeff, in
         this->Nodes = new Node[MaxNode];
 
         this->maximum_node_idx = 0;
-        this->root_idx = create_root( p_c );
+        this->root_idx = 0;
+        this->root = create_root( p_c );
         this->root_pos = initial_pos;
     };
 
@@ -29,26 +30,27 @@ void MCTS_agent::reset(Color p_c, Position pos){
     this->player_color = p_c;
     
     this->maximum_node_idx = 0;
-    this->root_idx = create_root(p_c);
+    this->root_idx = 0;
+    this->root = create_root(p_c);
 }
 
 Move MCTS_agent::opt_solution(){
     // int select_idx = select_maximum_child_idx(root_idx);
-    int node_idx = this->root_idx;
-    assert(Nodes[node_idx].Nchild > 0);
-    int selected = 0;
+    Node* cur = this->root;
+    assert(cur->Nchild > 0);
+    Node* selected = get_child(root, 0);
     double mx = -1000000;
-    for(int i=0; i< Nodes[node_idx].Nchild; i++){
-        int child_id = Nodes[node_idx].c_id[i];
+    for(int i=0; i< cur->Nchild; i++){
+        Node* child = get_child(root, i);
 
-        double score_i = -Nodes[child_id].Mean; // take negative for Negamax search
+        double score_i = -child->Mean; // take negative for Negamax search
 
         if( mx < score_i ){
-            selected = child_id;
+            selected = child;
             mx = score_i;
         }
     }
-    return Nodes[selected].move;
+    return selected->move;
 
 
     // return Nodes[root_idx].c_move[select_idx];
@@ -73,7 +75,7 @@ bool MCTS_agent::MCTS_iteration(){
         cout<<"start to search PV\n";
     #endif
     auto PV = search_pv();
-    int PV_leaf_idx = PV.first;
+    Node* PV_leaf = PV.first;
     Position leaf_pos(PV.second);
 
     if(leaf_pos.winner() != NO_COLOR){
@@ -84,22 +86,22 @@ bool MCTS_agent::MCTS_iteration(){
         cout<<"PV:" <<leaf_pos<<endl;
     #endif
 
-    expand(PV_leaf_idx, leaf_pos);
+    expand(PV_leaf, leaf_pos);
 
     #ifdef DEBUG
         cout << "finish expand" <<endl;
     #endif
 
-    for(int i=0; i<Nodes[PV_leaf_idx].Nchild; i++){
+    for(int i=0; i<PV_leaf->Nchild; i++){
         Position pos_child(leaf_pos);
 
-        int child_idx = Nodes[PV_leaf_idx].c_id[i];
+        Node* child = get_child(PV_leaf, i);
 
-        pos_child.do_move( Nodes[child_idx].move );
+        pos_child.do_move( child->move );
 
         
         Score simulate_solution = simulate(pos_child, this->n_simulate_expand);
-        back_propregation(child_idx, simulate_solution, this->n_simulate_expand);
+        back_propregation(child, simulate_solution, this->n_simulate_expand);
     }
 
     #ifdef DEBUG
@@ -109,14 +111,14 @@ bool MCTS_agent::MCTS_iteration(){
     return false;
 }
 
-pair<int, Position> MCTS_agent::search_pv(){
-    int cur_node_idx = root_idx;
+pair<Node*, Position> MCTS_agent::search_pv(){
+    Node* cur = root;
     Position pos(root_pos);
-    while(!Nodes[cur_node_idx].can_expand){
-        int selected = this->select_maximum_child(cur_node_idx);
+    while(!cur->can_expand){
+        Node* selected = this->select_maximum_child(cur);
         
-        pos.do_move( Nodes[selected].move );
-        cur_node_idx = selected;
+        pos.do_move( selected->move );
+        cur = selected;
         // #ifdef DEBUG
         //     cout << "current idx " << cur_node_idx <<endl;
         //     cout <<"\ncurrent state:" << pos <<endl;
@@ -129,34 +131,34 @@ pair<int, Position> MCTS_agent::search_pv(){
         //     cout<<"\n";
         // #endif
     }
-    return {cur_node_idx, pos};
+    return {cur, pos};
 }
 
-long double MCTS_agent::UCB(int child_idx, int parent_idx){
-    double sqrt_Ni = Nodes[child_idx].sqrtN;
-    if(Nodes[child_idx].Ntotal >= N_threshold){
-        return -Nodes[child_idx].Mean;
+long double MCTS_agent::UCB(Node* node, Node* parent){
+    double sqrt_Ni = node->sqrtN;
+    if(node->Ntotal >= N_threshold){
+        return -node->Mean;
     }
     if(sqrt_Ni == 0){
         return -inf;
     }
     
-    double score_i = -Nodes[child_idx].Mean; // take negative for Negamax search
-    double csqrt_log_N = Nodes[parent_idx].CsqrtlogN;
+    double score_i = -node->Mean; // take negative for Negamax search
+    double csqrt_log_N = parent->CsqrtlogN;
     return score_i + csqrt_log_N / sqrt_Ni;
 }
 
-int MCTS_agent::select_maximum_child(int node_idx){//return the index of the child in Nodes
-    int selected = Nodes[node_idx].c_id[0];
+Node* MCTS_agent::select_maximum_child(Node* cur_node){//return the index of the child in Nodes
+    Node* selected = get_child(cur_node, 0);
     
-    assert(Nodes[node_idx].Nchild > 0);
+    assert(cur_node->Nchild > 0);
 
-    double mx_UCB = this->UCB( selected, node_idx );
-    for(int i=1; i< Nodes[node_idx].Nchild; i++){
-        int child_id = Nodes[node_idx].c_id[i];
-        double child_UCB = UCB( child_id, node_idx );
+    double mx_UCB = this->UCB( selected, cur_node );
+    for(int i=1; i< cur_node->Nchild; i++){
+        Node* child = get_child(cur_node, i);
+        double child_UCB = UCB( child, cur_node );
         if( mx_UCB < child_UCB ){
-            selected = child_id;
+            selected = child;
         }
     }
     return selected;
@@ -165,7 +167,7 @@ int MCTS_agent::select_maximum_child(int node_idx){//return the index of the chi
 
 
 //version 0: generate all next-moves
-void MCTS_agent::expand(int node_idx, Position node_pos){
+void MCTS_agent::expand(Node* node, Position node_pos){
     MoveList nx_moves( node_pos );
 
     // #ifdef DEBUG
@@ -177,8 +179,8 @@ void MCTS_agent::expand(int node_idx, Position node_pos){
     // #endif
 
     for(int i=0; i< nx_moves.size(); i++){
-        int child_idx = create_sucessor(node_idx, nx_moves[i]);
-        Nodes[node_idx].c_id[i] = child_idx;
+        Node* child = create_sucessor(node, nx_moves[i]);
+        node->c_id[i] = child->id;
         
         // Position child_pos(node_pos);
         // child_pos.do_move(nx_moves[i]);
@@ -191,8 +193,8 @@ void MCTS_agent::expand(int node_idx, Position node_pos){
         //     cout << "-----\n";
         // #endif
     }
-    Nodes[node_idx].Nchild = nx_moves.size();
-    Nodes[node_idx].can_expand = 0;
+    node->Nchild = nx_moves.size();
+    node->can_expand = 0;
 
     // #ifdef DEBUG
     //     cout <<"successors:" <<endl;
@@ -231,28 +233,28 @@ int MCTS_agent::simulate(Position pos, int n_simulate){
 
 
 //back propregation part
-void MCTS_agent::update_node(int node_idx, Score w, int n){
-    Node &cur_node = Nodes[node_idx];
-    cur_node.Ntotal += n;
-    cur_node.score_sum += w;
-    cur_node.sq_score_sum += w*w;
-    cur_node.sqrtN = sqrt(cur_node.Ntotal);
-    cur_node.CsqrtlogN = 
-        this->Exploration_coeff * sqrt(log(cur_node.Ntotal));
-    cur_node.Mean = (double)(cur_node.score_sum) / cur_node.Ntotal;
-    double mean_sq = cur_node.Mean;
+void MCTS_agent::update_node(Node* node, Score w, int n){
+    // Node &cur_node = Nodes[node_idx];
+    node->Ntotal += n;
+    node->score_sum += w;
+    node->sq_score_sum += w*w;
+    node->sqrtN = sqrt(node->Ntotal);
+    node->CsqrtlogN = 
+        this->Exploration_coeff * sqrt(log(node->Ntotal));
+    node->Mean = (double)(node->score_sum) / node->Ntotal;
+    double mean_sq = node->Mean;
     mean_sq *= mean_sq;
-    cur_node.Variance = ((double)cur_node.sq_score_sum/cur_node.Ntotal - mean_sq);
+    node->Variance = ((double)node->sq_score_sum/node->Ntotal - mean_sq);
 }
 
-void MCTS_agent::back_propregation(int leaf_idx, Score score, int n_simulate){
-    int current_idx = leaf_idx;
-    this->update_node(current_idx, score, n_simulate);
+void MCTS_agent::back_propregation(Node* leaf, Score score, int n_simulate){
+    Node* cur = leaf;
+    this->update_node(cur, score, n_simulate);
     while(true){
         score = -score;
-        current_idx = Nodes[current_idx].p_id;
-        this->update_node(current_idx, score, n_simulate);
-        if(Nodes[current_idx].p_id == current_idx)
+        cur = cur->parent;
+        this->update_node(cur, score, n_simulate);
+        if(cur->parent == nullptr)
             break;
     }
 }

@@ -9,7 +9,7 @@
 // #define DEBUG 1
 #define USE_MCTS 1
 
-// #define ONLY_MCS 1
+#define ONLY_MCS 1
 
 #ifdef USE_MCTS
 #include"mcts_agent.h"
@@ -92,7 +92,8 @@ int main()
                 cout<<"Child: "<<root.Nchild <<endl;
                 for(int i=0; i<root.Nchild; i++){
                     cout<<"\tchild id:"<< root.c_id[i] <<"\n";
-                    cout<<"\tmove:"<<root.c_move[i]<<endl;
+                    Node* child = agent.get_child(&root, i);
+                    cout<<"\tmove:"<<child->move<<endl;
                 }
                 cout<<"W:" << root.Mean <<endl;
                 for(int i=0;i<agent.maximum_node_idx; i++){
