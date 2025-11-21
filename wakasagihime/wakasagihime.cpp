@@ -62,7 +62,7 @@ int main()
         Position pos_init;        
         #ifndef ONLY_MCS
             int N_simulate = 10000;
-            MCTS_agent agent(Red, pos_init, 1.0, 1);
+            MCTS_agent agent(Red, pos_init, 1.0, 5);
         #else
             int N_simulate = 1;
             MCTS_agent agent(Red, pos_init, 1, 1000);
@@ -73,7 +73,7 @@ int main()
         Position pos(line);
         
         agent.reset(pos.due_up(), pos);
-        agent.MCTS_simulatie(N_simulate);
+        agent.MCTS_simulate(N_simulate);
 
         Move nx_move = agent.opt_solution();
 

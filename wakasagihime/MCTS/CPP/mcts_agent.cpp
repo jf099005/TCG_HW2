@@ -9,9 +9,6 @@ using namespace std;
 // #define DEBUG 1
 const int N_threshold = 10000;
 const long double inf = 1e9;
-const double win_score = 1;//lose = -1
-const double tie_score = -0.05;
-
 MCTS_agent::MCTS_agent(Color p_c, Position initial_pos, double initial_coeff, int n_simulate_leaf):
         player_color(p_c), Exploration_coeff(initial_coeff), n_simulate_expand(n_simulate_leaf)
     {
@@ -56,7 +53,7 @@ Move MCTS_agent::opt_solution(){
     // return Nodes[root_idx].c_move[select_idx];
 }
 
-void MCTS_agent::MCTS_simulatie(int N_simulate, double time_constraint){
+void MCTS_agent::MCTS_simulate(int N_simulate, double time_constraint){
     while(N_simulate--){
         if( MCTS_iteration() ){
             // cout<<"remaining: " << N_simulate <<endl;
@@ -78,15 +75,13 @@ bool MCTS_agent::MCTS_iteration(){
     Node* PV_leaf = PV.first;
     Position leaf_pos(PV.second);
 
-    if(leaf_pos.winner() != NO_COLOR){
-        return true;
+    if(leaf_pos.winner() == NO_COLOR){
+        expand(PV_leaf, leaf_pos);
     }
 
     #ifdef DEBUG
         cout<<"PV:" <<leaf_pos<<endl;
     #endif
-
-    expand(PV_leaf, leaf_pos);
 
     #ifdef DEBUG
         cout << "finish expand" <<endl;
@@ -119,28 +114,17 @@ pair<Node*, Position> MCTS_agent::search_pv(){
         
         pos.do_move( selected->move );
         cur = selected;
-        // #ifdef DEBUG
-        //     cout << "current idx " << cur_node_idx <<endl;
-        //     cout <<"\ncurrent state:" << pos <<endl;
-        //     cout << "expandable: " << Nodes[cur_node_idx].can_expand <<endl;
-        //     cout <<"next moves: " << Nodes[cur_node_idx].Nchild <<endl;
-        //     for(int j=0; j<Nodes[cur_node_idx].Nchild; j++){
-        //         cout <<"idx: " << Nodes[cur_node_idx].c_id[j]<<endl;
-        //         cout << Nodes[cur_node_idx].c_move[j];
-        //     }
-        //     cout<<"\n";
-        // #endif
     }
     return {cur, pos};
 }
 
 long double MCTS_agent::UCB(Node* node, Node* parent){
     double sqrt_Ni = node->sqrtN;
-    if(node->Ntotal >= N_threshold){
-        return -node->Mean;
-    }
+    // if(node->Ntotal >= N_threshold){
+    //     return -node->Mean;
+    // }
     if(sqrt_Ni == 0){
-        return -inf;
+        return inf;
     }
     
     double score_i = -node->Mean; // take negative for Negamax search
@@ -159,6 +143,7 @@ Node* MCTS_agent::select_maximum_child(Node* cur_node){//return the index of the
         double child_UCB = UCB( child, cur_node );
         if( mx_UCB < child_UCB ){
             selected = child;
+            mx_UCB = child_UCB;
         }
     }
     return selected;
@@ -170,63 +155,37 @@ Node* MCTS_agent::select_maximum_child(Node* cur_node){//return the index of the
 void MCTS_agent::expand(Node* node, Position node_pos){
     MoveList nx_moves( node_pos );
 
-    // #ifdef DEBUG
-    //     cout << "expand node " << node_idx << node_pos <<endl;
-    //     cout<<"--\n";
-    //     cout<<"nx moves:";
-    //     for(Move mv: nx_moves)cout<<mv;
-    //     cout<<"\n";
-    // #endif
-
     for(int i=0; i< nx_moves.size(); i++){
         Node* child = create_sucessor(node, nx_moves[i]);
         node->c_id[i] = child->id;
-        
-        // Position child_pos(node_pos);
-        // child_pos.do_move(nx_moves[i]);
-
-        // #ifdef DEBUG
-        //     cout <<"expand node, idx:" << Nodes[node_idx].c_id[i] <<endl;
-        //     cout<<"move:" << Nodes[node_idx].c_move[i] <<"/" << nx_moves[i]<<endl;
-        //     cout << nx ;
-        
-        //     cout << "-----\n";
-        // #endif
     }
     node->Nchild = nx_moves.size();
     node->can_expand = 0;
-
-    // #ifdef DEBUG
-    //     cout <<"successors:" <<endl;
-    //     for(int i=0; i<Nodes[node_idx].Nchild; i++){
-    //         cout << "idx:" << Nodes[node_idx].c_id[i] <<", move:" <<  Nodes[node_idx].c_move[i];
-    //     }
-    //     cout<<"--\n";
-    // #endif
 }
 
 //simulate part
     //version 0: default random simulate
 
-Score MCTS_agent::pos_simulate(Position pos){
-    Position copy(pos);
-    while (copy.winner() == NO_COLOR) {
-        MoveList moves(copy);
-        Move rd_move = moves[rng(moves.size())];
-        copy.do_move(rd_move);
-    }
-    if (copy.winner() == pos.due_up()) {
-        return 5;
-    } else if (copy.winner() == Mystery) {
-        return -2;
-    }
-    return -5;
-}
+// Score MCTS_agent::pos_simulate(Position pos){
+//     Position copy(pos);
+//     while (copy.winner() == NO_COLOR) {
+//         MoveList moves(copy);
+//         Move rd_move = moves[rng(moves.size())];
+//         copy.do_move(rd_move);
+//     }
+//     if (copy.winner() == pos.due_up()) {
+//         return win_score;
+//     } else if (copy.winner() == Mystery) {
+//         return tie_score;
+//     }
+//     return -win_score;
+// }
 
 int MCTS_agent::simulate(Position pos, int n_simulate){
     int total_score = 0;
     while(n_simulate--){
-        total_score += pos_simulate(pos);
+        // total_score += pos_simulate(pos);
+        total_score += pos_simulate::simulate(pos);
     }
     return total_score;
 }

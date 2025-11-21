@@ -83,24 +83,21 @@ int main()
                 info << pos <<endl;
             #endif
 
-            agent.MCTS_simulatie(N_simulate);
+            agent.MCTS_simulate(N_simulate);
 
             #ifdef ONLY_MCS
                 cout << pos <<endl;
                 Node root = agent.Nodes[agent.root_idx];
                 cout <<"N:" << root.Ntotal <<endl;
                 cout<<"Child: "<<root.Nchild <<endl;
-                for(int i=0; i<root.Nchild; i++){
-                    cout<<"\tchild id:"<< root.c_id[i] <<"\n";
-                    Node* child = agent.get_child(&root, i);
-                    cout<<"\tmove:"<<child->move<<endl;
-                }
                 cout<<"W:" << root.Mean <<endl;
                 for(int i=0;i<agent.maximum_node_idx; i++){
                     Node node = agent.Nodes[i];
                     cout <<"node "<<i<<endl;
+                    cout<<"\tmove:"<<node.move<<endl;
                     cout <<"\tN:" << node.Ntotal <<endl;
                     cout<<"\tChild: "<<node.Nchild <<endl;
+
                     cout<<"\tW:" <<node.score_sum <<"/" <<node.Ntotal <<"=" << node.Mean <<endl;
 
                 }

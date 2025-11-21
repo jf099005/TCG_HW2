@@ -13,7 +13,7 @@ class MCTS_agent{
 
         MCTS_agent(Color p_c, Position initial_pos, double initial_coeff = 1.0, int n_simulate_leaf = 5);
         void reset(Color p_c, Position initial_pos);
-        void MCTS_simulatie(int N_simulate, double time_constraint = 5.0);
+        void MCTS_simulate(int N_simulate, double time_constraint = 5.0);
         bool MCTS_iteration();//return true if early-stop
         Move opt_solution();
         
@@ -62,7 +62,7 @@ class MCTS_agent{
             //return the result of simulate in a given number of simulation
             //w.r.t. the player of pos
             Score simulate(Position pos, int n_simulate);
-            Score pos_simulate(Position pos);
+            // Score pos_simulate(Position pos);
 
             //used for back_propregation
             void update_node(Node* node, Score score, int n_simulate);//w: number of winning, n: total number of simulation

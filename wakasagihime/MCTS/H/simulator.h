@@ -4,12 +4,16 @@
 
 typedef int Score;
 
-class CDC_simulator{
-    public:
-        CDC_simulator()
-        {};
-    
-        Score simulate(Position pos);
-};
+
+namespace pos_simulate{
+
+    const Score win_score = 5;//lose = -1
+    const Score tie_score = -2;
+
+    int move_evaluate(const Position& pos, Move move);
+    Move stone_power_greedy_strategy(const Position& pos, MoveList<> &moves);
+    Score simulate(Position pos);
+
+}
 
 #endif
