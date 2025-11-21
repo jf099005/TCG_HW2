@@ -60,68 +60,8 @@ int main()
     std::string line;
     /* read input board state */
     
-    #ifdef USE_MCTS
-        Position pos_init;        
-        #ifndef ONLY_MCS
-            int N_simulate = 1000;
-            MCTS_agent agent(Red, pos_init, 1, 5);
-        #else
-            int N_simulate = 1;
-            MCTS_agent agent(Red, pos_init, 1, 1000);
-        #endif
-    #endif
-
     while (std::getline(std::cin, line)) {
         Position pos(line);
-        
-        #ifdef USE_MCTS
-        
-            agent.reset(pos.due_up(), pos);
-
-            #ifdef TEST
-                info << "current pos:------------------------\n";
-                info << pos <<endl;
-            #endif
-
-            agent.MCTS_simulatie(N_simulate);
-
-            #ifdef ONLY_MCS
-                cout << pos <<endl;
-                Node root = agent.Nodes[agent.root_idx];
-                cout <<"N:" << root.Ntotal <<endl;
-                cout<<"Child: "<<root.Nchild <<endl;
-                for(int i=0; i<root.Nchild; i++){
-                    cout<<"\tchild id:"<< root.c_id[i] <<"\n";
-                    cout<<"\tmove:"<<root.c_move[i]<<endl;
-                }
-                cout<<"W:" << root.Mean <<endl;
-                for(int i=0;i<agent.maximum_node_idx; i++){
-                    Node node = agent.Nodes[i];
-                    cout <<"node "<<i<<endl;
-                    cout <<"\tN:" << node.Ntotal <<endl;
-                    cout<<"\tChild: "<<node.Nchild <<endl;
-                    cout<<"\tW:" <<node.score_sum <<"/" <<node.Ntotal <<"=" << node.Mean <<endl;
-
-                }
-                Move choice = agent.opt_solution(0,0);
-                cout<<"winrate:"<<agent.Nodes[agent.root_idx].Mean <<endl;
-                info <<"choice:" << choice;
-
-                // return 0;
-            #endif
-
-            Move nx_move = agent.opt_solution(0,0);
-
-            #ifdef DEBUG
-            
-                cout<<"winrate:"<<agent.Nodes[agent.root_idx].Mean <<endl;
-                info <<"chlice:" << nx_move;
-
-                return 0;
-            #endif
-        #else
-            // -------OLD MCS-----------------------------
-
             MoveList moves(pos);
 
             #ifdef DEBUG
@@ -150,9 +90,7 @@ int main()
             }
             /* output the move */
             Move nx_move = moves[chosen];
-        #endif
-
-        info << nx_move;
+            info << nx_move;
 
         #ifdef TEST
             pos.do_move(nx_move);

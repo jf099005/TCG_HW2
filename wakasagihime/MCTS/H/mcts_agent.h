@@ -49,6 +49,7 @@ class MCTS_agent{
 
             //find the maximum children of the given node
             int select_maximum_child_idx(int node_idx);
+            // Node select_maximum_child_idx(int node_idx);
 
             void expand(int node_idx, Position node_pos);
 
