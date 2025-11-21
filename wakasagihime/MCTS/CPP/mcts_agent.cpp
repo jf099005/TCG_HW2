@@ -22,6 +22,8 @@ MCTS_agent::MCTS_agent(Color p_c, Position initial_pos, double initial_coeff, in
         this->root_pos = initial_pos;
     };
 
+
+
 void MCTS_agent::reset(Color p_c, Position pos){
     this->root_pos = pos;
     this->player_color = p_c;
@@ -30,10 +32,26 @@ void MCTS_agent::reset(Color p_c, Position pos){
     this->root_idx = create_root(p_c);
 }
 
-Move MCTS_agent::opt_solution(double time_constraint, int N_simulate){
-    MCTS_simulatie(time_constraint, N_simulate);
-    int select_idx = select_maximum_child_idx(root_idx);
-    return Nodes[root_idx].c_move[select_idx];
+Move MCTS_agent::opt_solution(){
+    // int select_idx = select_maximum_child_idx(root_idx);
+    int node_idx = this->root_idx;
+    assert(Nodes[node_idx].Nchild > 0);
+    int selected = 0;
+    double mx = -1000000;
+    for(int i=0; i< Nodes[node_idx].Nchild; i++){
+        int child_id = Nodes[node_idx].c_id[i];
+
+        double score_i = -Nodes[child_id].Mean; // take negative for Negamax search
+
+        if( mx < score_i ){
+            selected = child_id;
+            mx = score_i;
+        }
+    }
+    return Nodes[selected].move;
+
+
+    // return Nodes[root_idx].c_move[select_idx];
 }
 
 void MCTS_agent::MCTS_simulatie(int N_simulate, double time_constraint){
@@ -74,9 +92,11 @@ bool MCTS_agent::MCTS_iteration(){
 
     for(int i=0; i<Nodes[PV_leaf_idx].Nchild; i++){
         Position pos_child(leaf_pos);
-        pos_child.do_move( Nodes[PV_leaf_idx].c_move[i] );
 
         int child_idx = Nodes[PV_leaf_idx].c_id[i];
+
+        pos_child.do_move( Nodes[child_idx].move );
+
         
         Score simulate_solution = simulate(pos_child, this->n_simulate_expand);
         back_propregation(child_idx, simulate_solution, this->n_simulate_expand);
@@ -93,10 +113,10 @@ pair<int, Position> MCTS_agent::search_pv(){
     int cur_node_idx = root_idx;
     Position pos(root_pos);
     while(!Nodes[cur_node_idx].can_expand){
-        int selected = this->select_maximum_child_idx(cur_node_idx);
+        int selected = this->select_maximum_child(cur_node_idx);
         
-        pos.do_move( Nodes[cur_node_idx].c_move[selected] );
-        cur_node_idx = Nodes[cur_node_idx].c_id[selected];
+        pos.do_move( Nodes[selected].move );
+        cur_node_idx = selected;
         // #ifdef DEBUG
         //     cout << "current idx " << cur_node_idx <<endl;
         //     cout <<"\ncurrent state:" << pos <<endl;
@@ -126,17 +146,17 @@ long double MCTS_agent::UCB(int child_idx, int parent_idx){
     return score_i + csqrt_log_N / sqrt_Ni;
 }
 
-int MCTS_agent::select_maximum_child_idx(int node_idx){
-    int selected = 0;
+int MCTS_agent::select_maximum_child(int node_idx){//return the index of the child in Nodes
+    int selected = Nodes[node_idx].c_id[0];
     
     assert(Nodes[node_idx].Nchild > 0);
 
-    double mx_UCB = this->UCB( Nodes[node_idx].c_id[0], node_idx );
+    double mx_UCB = this->UCB( selected, node_idx );
     for(int i=1; i< Nodes[node_idx].Nchild; i++){
         int child_id = Nodes[node_idx].c_id[i];
         double child_UCB = UCB( child_id, node_idx );
         if( mx_UCB < child_UCB ){
-            selected = i;
+            selected = child_id;
         }
     }
     return selected;
@@ -157,12 +177,11 @@ void MCTS_agent::expand(int node_idx, Position node_pos){
     // #endif
 
     for(int i=0; i< nx_moves.size(); i++){
-
-        Nodes[node_idx].c_move[i] = nx_moves[i];
-        Nodes[node_idx].c_id[i] = create_sucessor(node_idx);
+        int child_idx = create_sucessor(node_idx, nx_moves[i]);
+        Nodes[node_idx].c_id[i] = child_idx;
         
-        Position child_pos(node_pos);
-        child_pos.do_move(Nodes[node_idx].c_move[i]);
+        // Position child_pos(node_pos);
+        // child_pos.do_move(nx_moves[i]);
 
         // #ifdef DEBUG
         //     cout <<"expand node, idx:" << Nodes[node_idx].c_id[i] <<endl;
@@ -186,10 +205,26 @@ void MCTS_agent::expand(int node_idx, Position node_pos){
 
 //simulate part
     //version 0: default random simulate
+
+Score MCTS_agent::pos_simulate(Position pos){
+    Position copy(pos);
+    while (copy.winner() == NO_COLOR) {
+        MoveList moves(copy);
+        Move rd_move = moves[rng(moves.size())];
+        copy.do_move(rd_move);
+    }
+    if (copy.winner() == pos.due_up()) {
+        return 5;
+    } else if (copy.winner() == Mystery) {
+        return -2;
+    }
+    return -5;
+}
+
 int MCTS_agent::simulate(Position pos, int n_simulate){
     int total_score = 0;
     while(n_simulate--){
-        total_score += pos.simulate(strategy_random);
+        total_score += pos_simulate(pos);
     }
     return total_score;
 }

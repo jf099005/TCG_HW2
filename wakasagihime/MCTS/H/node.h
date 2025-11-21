@@ -6,7 +6,7 @@
 #include "lib/types.h"
 #include "lib/helper.h"
 const int MaxChild = 100;
-const int MaxNode = 100000;
+const int MaxNode = 1000000;
 
 using namespace std;
 
@@ -16,7 +16,8 @@ typedef struct MCT_node{
     int ply;  // the ply from parent to here
     int p_id; // parent id, root’s parent is the root
     int  c_id[MaxChild]; // children id
-    Move c_move[MaxChild];
+    // Move c_move[MaxChild];
+    Move move;
     int depth; // depth, 0 for the root
     int Nchild; // number of children
     int Ntotal; // total # of simulations
@@ -51,7 +52,7 @@ typedef struct MCT_node{
     }
 
     //for others
-    MCT_node(int parent_id, const MCT_node& parent){
+    MCT_node(int parent_id, const MCT_node& parent, Move child_move){
         color = parent.color;
         p_id = parent_id;
         depth = parent.depth + 1;
@@ -60,6 +61,8 @@ typedef struct MCT_node{
         score_sum = 0;
         sq_score_sum = 0;
         can_expand = 1;
+        move = child_move;
+
     }
     /*    constexpr Move &operator=(const Move &other)
     {

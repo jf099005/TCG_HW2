@@ -15,7 +15,7 @@ class MCTS_agent{
         void reset(Color p_c, Position initial_pos);
         void MCTS_simulatie(int N_simulate, double time_constraint = 5.0);
         bool MCTS_iteration();//return true if early-stop
-        Move opt_solution(double time_constraint, int N_simulate = 0);
+        Move opt_solution();
         
         Color player_color;
         // when expand, simulate n_simulate_expand times for each new leaves 
@@ -35,8 +35,8 @@ class MCTS_agent{
                 return maximum_node_idx++;
             }
 
-            int create_sucessor(int parent_idx){
-                Nodes[maximum_node_idx] = Node(parent_idx, Nodes[parent_idx]);
+            int create_sucessor(int parent_idx, Move child_move){
+                Nodes[maximum_node_idx] = Node(parent_idx, Nodes[parent_idx], child_move);
                 return maximum_node_idx++;
             }
 
@@ -47,8 +47,8 @@ class MCTS_agent{
             //return the index and the position of the leaf in PV
             pair<int, Position> search_pv();
 
-            //find the maximum children of the given node
-            int select_maximum_child_idx(int node_idx);
+            //find the maximum children index in Nodes
+            int select_maximum_child(int node_idx);
             // Node select_maximum_child_idx(int node_idx);
 
             void expand(int node_idx, Position node_pos);
@@ -56,6 +56,7 @@ class MCTS_agent{
             //return the result of simulate in a given number of simulation
             //w.r.t. the player of pos
             Score simulate(Position pos, int n_simulate);
+            Score pos_simulate(Position pos);
 
             //used for back_propregation
             void update_node(int node_idx, Score score, int n_simulate);//w: number of winning, n: total number of simulation
