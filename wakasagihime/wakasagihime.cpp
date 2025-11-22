@@ -13,7 +13,7 @@
 #include"mcts_agent.h"
 #endif
 
-#define MY_AGENT 1
+// #define MY_AGENT 1
 
 // Girls are preparing...
 __attribute__((constructor)) void prepare()
@@ -60,12 +60,12 @@ int main()
     
     #ifdef USE_MCTS
         Position pos_init;        
-        #ifdef ONLY_MCS
+        #ifndef ONLY_MCS
+            int N_simulate = 10000;
+            MCTS_agent agent(Red, pos_init, 1, 5);
+        #else
             int N_simulate = 1;
             MCTS_agent agent(Red, pos_init, 1, 1000);
-        #else
-            int N_simulate = 10000;
-            MCTS_agent agent(Red, pos_init, 1.0, 5);
         #endif
     #endif
 

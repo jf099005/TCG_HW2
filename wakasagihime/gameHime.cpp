@@ -73,7 +73,7 @@ int main()
         Position pos(line);
         
         agent.reset(pos.due_up(), pos);
-        agent.MCTS_simulatie(N_simulate);
+        agent.MCTS_simulate(N_simulate);
 
         Move nx_move = agent.opt_solution();
 
