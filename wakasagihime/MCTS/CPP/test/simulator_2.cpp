@@ -52,19 +52,49 @@ Move pos_simulate::stone_power_greedy_strategy(const Position& pos, MoveList<> &
     return moves[idx];
 }
 
+
+Color pos_simulate::early_stop(Position pos){
+    return NO_COLOR;
+    bool red_win = true;
+    bool black_win = true;
+    for(Square sq_r: BoardView(pos.pieces(Red))){
+        PieceType R = pos.peek_piece_at(sq_r).type;
+        for(Square sq_b: BoardView( pos.pieces(Black) )){
+            PieceType B = pos.peek_piece_at(sq_b).type;
+            red_win &= !(B>R);
+            black_win &= !(R>B);
+            if(!(red_win or black_win))
+                break;
+        }
+        if(!(red_win or black_win))
+            break;
+    }
+
+
+    return red_win? Red : ( black_win? Black : NO_COLOR);
+}
+
 Score pos_simulate::simulate(Position pos){
+    // return pos.simulate(strategy_random);
     Position copy(pos);
-    while (copy.winner() == NO_COLOR) {
+    
+    // bool apply_early_stop = early_stop(pos) == NO_COLOR;
+    
+    Color winner = NO_COLOR;
+    while (winner == NO_COLOR) {
         MoveList moves(copy);
         Move rd_move = moves[rng(moves.size())];
         copy.do_move(rd_move);
+        winner = copy.winner();
+        // if(apply_early_stop and winner == NO_COLOR){
+        //     winner = early_stop(pos);
+        // }
     }
-    if (copy.winner() == pos.due_up()) {
+
+    if (winner == pos.due_up()) {
         return win_score;
-    } else if (copy.winner() == Mystery) {
+    } else if (winner == Mystery) {
         return tie_score;
     }
     return -win_score;
-
-    return 0;
 }

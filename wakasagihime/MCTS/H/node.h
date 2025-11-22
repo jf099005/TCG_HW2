@@ -24,8 +24,8 @@ typedef struct MCT_node{
     int Ntotal; // total # of simulations
     long double CsqrtlogN; // c * sqrt(log(Ntotal))
     long double sqrtN; // sqrt(Ntotal)
-    int score_sum; // score_sum: sum of scores
-    int sq_score_sum; // sq_score_sum: sum of square of each score
+    long double score_sum; // score_sum: sum of scores
+    long double sq_score_sum; // sq_score_sum: sum of square of each score
     long double Mean; // average score
     long double Variance; // variance of score
     bool can_expand;

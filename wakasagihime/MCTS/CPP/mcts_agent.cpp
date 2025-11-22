@@ -181,8 +181,8 @@ void MCTS_agent::expand(Node* node, Position node_pos){
 //     return -win_score;
 // }
 
-int MCTS_agent::simulate(Position pos, int n_simulate){
-    int total_score = 0;
+Score MCTS_agent::simulate(Position pos, int n_simulate){
+    Score total_score = 0;
     while(n_simulate--){
         // total_score += pos_simulate(pos);
         total_score += pos_simulate::simulate(pos);
@@ -209,7 +209,7 @@ void MCTS_agent::update_node(Node* node, Score w, int n){
 void MCTS_agent::back_propregation(Node* leaf, Score score, int n_simulate){
     Node* cur = leaf;
     this->update_node(cur, score, n_simulate);
-    while(true){
+    while(cur != nullptr){
         score = -score;
         cur = cur->parent;
         this->update_node(cur, score, n_simulate);

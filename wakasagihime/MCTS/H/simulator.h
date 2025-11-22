@@ -2,7 +2,7 @@
 #ifndef SIMULATOR
 #define SIMULATOR 1
 
-typedef int Score;
+typedef long double Score;
 
 
 namespace pos_simulate{
