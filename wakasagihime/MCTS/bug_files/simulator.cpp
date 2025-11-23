@@ -3,9 +3,9 @@
 #include<map>
 
 const int normal_move_score = 1;
-// const int suicide_move_score = 2;
+const int suicide_move_score = 2;
 const int capture_move_score = 10;
-
+HAHAHA
 map<PieceType, int> Piece_Value = {
     {General, 7},
     {Advisor, 8},
@@ -33,19 +33,27 @@ int pos_simulate::move_evaluate(const Position& pos, Move move){
 
 Move pos_simulate::stone_power_greedy_strategy(const Position& pos, MoveList<> &moves){
     static long long move_scores[200];
+    static long long prefix[200];
     static long long total_scores;
-    total_scores = 0;
-    for(int i=0; i< moves.size(); i++){
+
+    total_scores = move_evaluate(pos, moves[0]);
+    move_scores[0] = total_scores;
+    prefix[0] = total_scores;
+
+    for(int i=1; i< moves.size(); i++){
         move_scores[i] = move_evaluate(pos, moves[i]);
         total_scores += move_scores[i];
+        prefix[i] = prefix[i-1] + move_scores[i];
     }
 
-    static long long prefix[200];
-    prefix[0] = move_scores[0];
-    for (int i = 1; i < moves.size(); i++)
-        prefix[i] = prefix[i-1] + move_scores[i];
+    static long long rd;
+    rd = rng(total_scores) + 1;
 
-    long long rd = rng(prefix[ moves.size()-1]) + 1;
+    // for(int i=0; i<moves.size(); i++){
+    //     rd -= move_scores[i];
+    //     if(rd <= 0)
+    //         return moves[0];
+    // }
 
     // binary search
     int idx = lower_bound(prefix, prefix + moves.size(), rd) - prefix;
@@ -53,23 +61,26 @@ Move pos_simulate::stone_power_greedy_strategy(const Position& pos, MoveList<> &
 }
 
 
-//stable version
-// Score pos_simulate::simulate(Position pos){
-//     Position copy(pos);
-//     while (copy.winner() == NO_COLOR) {
-//         MoveList moves(copy);
-//         Move rd_move = moves[rng(moves.size())];
-//         copy.do_move(rd_move);
-//     }
-//     if (copy.winner() == pos.due_up()) {
-//         return win_score;
-//     } else if (copy.winner() == Mystery) {
-//         return tie_score;
-//     }
-//     return -win_score;
+Color pos_simulate::early_stop(Position pos){
+    return NO_COLOR;
+    bool red_win = true;
+    bool black_win = true;
+    for(Square sq_r: BoardView(pos.pieces(Red))){
+        PieceType R = pos.peek_piece_at(sq_r).type;
+        for(Square sq_b: BoardView( pos.pieces(Black) )){
+            PieceType B = pos.peek_piece_at(sq_b).type;
+            red_win &= !(B>R);
+            black_win &= !(R>B);
+            if(!(red_win or black_win))
+                break;
+        }
+        if(!(red_win or black_win))
+            break;
+    }
 
-//     return 0;
-// }
+
+    return red_win? Red : ( black_win? Black : NO_COLOR);
+}
 
 Score pos_simulate::simulate(Position pos){
     Position copy(pos);
@@ -79,8 +90,8 @@ Score pos_simulate::simulate(Position pos){
 
     while (winner == NO_COLOR) {
         MoveList moves(copy);
-        // Move move = moves[rng(moves.size())];
-        Move move = stone_power_greedy_strategy(copy, moves);
+        Move move = moves[rng(moves.size())];
+        // Move move = stone_power_greedy_strategy(copy, moves);
         copy.do_move(move);
         winner = copy.winner();
         // if(winner == NO_COLOR and apply_early_stop)

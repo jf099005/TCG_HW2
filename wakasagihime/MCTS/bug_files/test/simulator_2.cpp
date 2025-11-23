@@ -1,7 +1,7 @@
 #include"simulator.h"
 #include<algorithm>
 #include<map>
-
+HAHAHA
 const int normal_move_score = 5;
 const int suicide_move_score = 2;
 const int capture_move_score = 10;

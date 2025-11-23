@@ -61,7 +61,7 @@ int main()
     #ifdef USE_MCTS
         Position pos_init;        
         #ifndef ONLY_MCS
-            int N_simulate = 10000;
+            int N_simulate = 1000;
             MCTS_agent agent(Red, pos_init, 1, 5);
         #else
             int N_simulate = 1;
