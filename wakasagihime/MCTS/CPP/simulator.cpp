@@ -95,3 +95,35 @@ Score pos_simulate::simulate(Position pos){
 
     return 0;
 }
+
+
+Score pos_simulate::simulate_and_record(Position pos, MOVE_RECORDER* move_recorder){
+    Position copy(pos);
+    Color winner = copy.winner();
+
+    // bool apply_early_stop = (early_stop(pos) == NO_COLOR);
+
+    while (winner == NO_COLOR) {
+        MoveList moves(copy);
+        // Move move = moves[rng(moves.size())];
+        Move move = stone_power_greedy_strategy(copy, moves);
+        copy.do_move(move);
+        if(move_recorder->find(move) == move_recorder->end())
+            (*move_recorder)[move] = 1;
+
+        (*move_recorder)[move] += 1;
+
+        winner = copy.winner();
+        // if(winner == NO_COLOR and apply_early_stop)
+        //     winner = early_stop(copy);
+    }
+    if (copy.winner() == pos.due_up()) {
+        return win_score;
+    } else if (copy.winner() == Mystery) {
+        return tie_score;
+    }
+    return -win_score;
+
+    return 0;
+}
+

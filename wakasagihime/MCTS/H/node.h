@@ -29,7 +29,6 @@ typedef struct MCT_node{
     long double Mean; // average score
     long double Variance; // variance of score
     bool can_expand;
-
     //for root
     MCT_node(){
         // color = Red;

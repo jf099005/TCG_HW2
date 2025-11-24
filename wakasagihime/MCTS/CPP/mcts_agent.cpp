@@ -10,12 +10,14 @@ using namespace std;
 const int N_threshold = 10000;
 const long double inf = 1e9;
 MCTS_agent::MCTS_agent(Color p_c, Position initial_pos, double initial_coeff, int n_simulate_leaf):
-        player_color(p_c), Exploration_coeff(initial_coeff), n_simulate_expand(n_simulate_leaf)
+    player_color(p_c), Exploration_coeff(initial_coeff), n_simulate_expand(n_simulate_leaf),
+    N(0), N_AMAF(0), maximum_node_idx(0), root_idx(0)
     {
         this->Nodes = new Node[MaxNode];
-
-        this->maximum_node_idx = 0;
-        this->root_idx = 0;
+        // #ifdef AMAF
+        //     assert(N_simulate_leaf == 1);
+        // #endif
+        this->AMAF_Nodes = new Node[MaxNode];
         this->root = create_root( p_c );
         this->root_pos = initial_pos;
     };
@@ -78,6 +80,10 @@ bool MCTS_agent::MCTS_iteration(){
     if(leaf_pos.winner() == NO_COLOR){
         expand(PV_leaf, leaf_pos);
     }
+    // else{
+    //     Score solution = leaf_pos.winner() == leaf_pos.due_up();
+
+    // }
 
     #ifdef DEBUG
         cout<<"PV:" <<leaf_pos<<endl;
@@ -87,16 +93,24 @@ bool MCTS_agent::MCTS_iteration(){
         cout << "finish expand" <<endl;
     #endif
 
+    static MOVE_RECORDER moves_record;
+
+    moves_record.clear();
+
     for(int i=0; i<PV_leaf->Nchild; i++){
         Position pos_child(leaf_pos);
 
         Node* child = get_child(PV_leaf, i);
 
         pos_child.do_move( child->move );
-
-        
-        Score simulate_solution = simulate(pos_child, this->n_simulate_expand);
-        back_propregation(child, simulate_solution, this->n_simulate_expand);
+        #ifdef AMAF
+            Score simulate_solution = simulate_AMAF(pos_child, 1, &moves_record);
+            N += n_simulate_expand;
+            back_propregation_RAVE(child, simulate_solution, this->n_simulate_expand, &moves_record);
+        #else
+            Score simulate_solution = simulate(pos_child, this->n_simulate_expand);
+            back_propregation(child, simulate_solution, this->n_simulate_expand);
+        #endif       
     }
 
     #ifdef DEBUG
@@ -132,15 +146,25 @@ long double MCTS_agent::UCB(Node* node, Node* parent){
     return score_i + csqrt_log_N / sqrt_Ni;
 }
 
+long double MCTS_agent::UCB_RAVE(Node* node, Node* parent){
+    Node* node_amaf = get_AMAF_Node(node);
+    Node* parent_amaf = get_AMAF_Node(parent);
+
+    long double ucb_origin = UCB(node, parent);
+    long double ucb_amaf = UCB(node_amaf, parent_amaf);
+
+    return (1-this->beta)*ucb_origin + this->beta * ucb_amaf;
+}
+
 Node* MCTS_agent::select_maximum_child(Node* cur_node){//return the index of the child in Nodes
     Node* selected = get_child(cur_node, 0);
     
     assert(cur_node->Nchild > 0);
 
-    double mx_UCB = this->UCB( selected, cur_node );
+    double mx_UCB = this->UCB_RAVE( selected, cur_node );
     for(int i=1; i< cur_node->Nchild; i++){
         Node* child = get_child(cur_node, i);
-        double child_UCB = UCB( child, cur_node );
+        double child_UCB = UCB_RAVE( child, cur_node );
         if( mx_UCB < child_UCB ){
             selected = child;
             mx_UCB = child_UCB;
@@ -190,6 +214,15 @@ Score MCTS_agent::simulate(Position pos, int n_simulate){
     return total_score;
 }
 
+Score MCTS_agent::simulate_AMAF(Position pos, int n_simulate, MOVE_RECORDER* moves_recorder){
+    Score total_score = 0;
+    while(n_simulate--){
+        // total_score += pos_simulate(pos);
+        total_score += pos_simulate::simulate_and_record(pos, moves_recorder);
+    }
+    return total_score;
+}
+
 
 //back propregation part
 void MCTS_agent::update_node(Node* node, Score w, int n){
@@ -206,6 +239,27 @@ void MCTS_agent::update_node(Node* node, Score w, int n){
     node->Variance = ((double)node->sq_score_sum/node->Ntotal - mean_sq);
 }
 
+//node: original node, not amaf node
+
+
+
+void MCTS_agent::update_node_AMAF(Node* node, Score score, int n_simulate, MOVE_RECORDER* move_recorder){
+    Node* node_amaf = get_AMAF_Node(node);
+
+    for(int i=0; i < node->Nchild; i++){
+        Node* child = get_child(node, i);
+        if( move_recorder->find( child->move ) != move_recorder->end() ){
+            Node* child_amaf = get_AMAF_Node(child);
+            update_node( child_amaf, score, (*move_recorder)[child->move] );
+        }
+    }
+}
+
+void MCTS_agent::update_node_RAVE(Node* node, Score score, int n_simulate, MOVE_RECORDER* move_recorder){
+    update_node(node, score, n_simulate);
+    update_node_AMAF(node, score, n_simulate, move_recorder);
+}
+
 void MCTS_agent::back_propregation(Node* leaf, Score score, int n_simulate){
     Node* cur = leaf;
     this->update_node(cur, score, n_simulate);
@@ -213,6 +267,20 @@ void MCTS_agent::back_propregation(Node* leaf, Score score, int n_simulate){
         score = -score;
         cur = cur->parent;
         this->update_node(cur, score, n_simulate);
+        if(cur->parent == nullptr)
+            break;
+    }
+}
+
+
+
+void MCTS_agent::back_propregation_RAVE(Node* leaf, Score score, int n_simulate, MOVE_RECORDER* move_recorder){
+    Node* cur = leaf;
+    this->update_node(cur, score, n_simulate);
+    while(cur != nullptr){
+        score = -score;
+        cur = cur->parent;
+        this->update_node_RAVE(cur, score, n_simulate, move_recorder);
         if(cur->parent == nullptr)
             break;
     }

@@ -3,6 +3,7 @@
 #define SIMULATOR 1
 
 typedef long double Score;
+typedef map<Move, int> MOVE_RECORDER;
 
 
 namespace pos_simulate{
@@ -13,6 +14,7 @@ namespace pos_simulate{
     int move_evaluate(const Position& pos, Move move);
     Move stone_power_greedy_strategy(const Position& pos, MoveList<> &moves);
     Score simulate(Position pos);
+    Score simulate_and_record(Position pos, MOVE_RECORDER* moves_record);
 
 }
 
