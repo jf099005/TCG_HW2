@@ -31,6 +31,8 @@ void MCTS_agent::reset(Color p_c, Position pos){
     this->maximum_node_idx = 0;
     this->root_idx = 0;
     this->root = create_root(p_c);
+    this->N = 0;
+    this->N_AMAF = 0;
 }
 
 Move MCTS_agent::opt_solution(){
@@ -77,26 +79,25 @@ bool MCTS_agent::MCTS_iteration(){
     Node* PV_leaf = PV.first;
     Position leaf_pos(PV.second);
 
-    if(leaf_pos.winner() == NO_COLOR){
-        expand(PV_leaf, leaf_pos);
-    }
-    // else{
-    //     Score solution = leaf_pos.winner() == leaf_pos.due_up();
-
-    // }
-
-    #ifdef DEBUG
-        cout<<"PV:" <<leaf_pos<<endl;
-    #endif
-
-    #ifdef DEBUG
-        cout << "finish expand" <<endl;
-    #endif
-
     static MOVE_RECORDER moves_record;
 
     moves_record.clear();
 
+
+    if(leaf_pos.winner() == NO_COLOR){
+        expand(PV_leaf, leaf_pos);
+    }
+    else{
+        Score score;
+        if(leaf_pos.winner() == Mystery)score = pos_simulate::tie_score;
+        else{
+            score = leaf_pos.winner() == leaf_pos.due_up() ?\
+                        pos_simulate::win_score : -pos_simulate::win_score;
+        }
+        this->N += n_simulate_expand;
+        back_propregation(PV_leaf, score, n_simulate_expand);        
+    }
+    
     for(int i=0; i<PV_leaf->Nchild; i++){
         Position pos_child(leaf_pos);
 
@@ -245,14 +246,20 @@ void MCTS_agent::update_node(Node* node, Score w, int n){
 
 void MCTS_agent::update_node_AMAF(Node* node, Score score, int n_simulate, MOVE_RECORDER* move_recorder){
     Node* node_amaf = get_AMAF_Node(node);
+    int node_N_amaf = 0;
 
     for(int i=0; i < node->Nchild; i++){
         Node* child = get_child(node, i);
         if( move_recorder->find( child->move ) != move_recorder->end() ){
             Node* child_amaf = get_AMAF_Node(child);
-            update_node( child_amaf, score, (*move_recorder)[child->move] );
+            update_node( child_amaf, -score, (*move_recorder)[child->move] );
+            node_N_amaf += (*move_recorder)[child->move];
         }
     }
+
+    update_node(node_amaf, score, node_N_amaf);
+
+    N_AMAF += node_N_amaf;
 }
 
 void MCTS_agent::update_node_RAVE(Node* node, Score score, int n_simulate, MOVE_RECORDER* move_recorder){
