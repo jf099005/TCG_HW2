@@ -6,11 +6,8 @@
 #include "lib/types.h"
 #include "lib/helper.h"
 // #define TEST 1
-// #define DEBUG 1
+#define DEBUG 1
 #define USE_MCTS 1
-
-#define ONLY_MCS 1
-
 #ifdef USE_MCTS
 #include"mcts_agent.h"
 #endif
@@ -64,16 +61,19 @@ int main()
         Position pos_init;        
         #ifndef ONLY_MCS
             int N_simulate = 1000;
-            MCTS_agent agent(Red, pos_init, 1, 1);
+            MCTS_agent agent(Red, pos_init, 100.0, 1);
         #else
             int N_simulate = 1;
             MCTS_agent agent(Red, pos_init, 1, 1000);
         #endif
     #endif
+    cout<<"initial N:" << agent.N <<"/" <<agent.N_AMAF <<endl;
 
-    while (std::getline(std::cin, line)) {
+    while (getline(std::cin, line)) {
         Position pos(line);
         
+        info << pos;
+
         #ifdef USE_MCTS
         
             agent.reset(pos.due_up(), pos);
@@ -82,41 +82,25 @@ int main()
                 info << "current pos:------------------------\n";
                 info << pos <<endl;
             #endif
+            Move nx_move;
+            for(int i=0; i<10; i++){
+                agent.MCTS_simulate(1000);
+                nx_move = agent.opt_solution();
+                
+                Node* mx_child = agent.select_maximum_child(agent.root);
 
-            agent.MCTS_simulate(N_simulate);
+                cout<<"N:" << agent.N <<"/" <<agent.N_AMAF <<endl;
+                cout<<"\t beta:" << agent.beta <<endl;
+                cout<<"\twinrate:"<<agent.Nodes[agent.root_idx].Mean <<" / " <<\
+                        agent.AMAF_Nodes[agent.root_idx].Mean <<endl;
+                cout<<"\torigin:" << agent.Nodes[agent.root_idx].score_sum <<" / " << agent.Nodes[agent.root_idx].Ntotal <<endl;
+                cout<<"\tAMAF:" << agent.AMAF_Nodes[agent.root_idx].score_sum << " / " << agent.AMAF_Nodes[agent.root_idx].Ntotal <<endl;
+                cout <<"\tchlice:" << nx_move;
 
-            #ifdef ONLY_MCS
-                cout << pos <<endl;
-                Node root = agent.Nodes[agent.root_idx];
-                cout <<"N:" << root.Ntotal <<endl;
-                cout<<"Child: "<<root.Nchild <<endl;
-                cout<<"W:" << root.Mean <<endl;
-                for(int i=0;i<agent.maximum_node_idx; i++){
-                    Node node = agent.Nodes[i];
-                    cout <<"node "<<i<<endl;
-                    cout<<"\tmove:"<<node.move<<endl;
-                    cout <<"\tN:" << node.Ntotal <<endl;
-                    cout<<"\tChild: "<<node.Nchild <<endl;
-
-                    cout<<"\tW:" <<node.score_sum <<"/" <<node.Ntotal <<"=" << node.Mean <<endl;
-
-                }
-                Move choice = agent.opt_solution();
-                cout<<"winrate:"<<agent.Nodes[agent.root_idx].Mean <<endl;
-                info <<"choice:" << choice;
-
-                // return 0;
-            #endif
-
-            Move nx_move = agent.opt_solution();
-
-            #ifdef DEBUG
+                cout<<"\tsearch:" << mx_child->move <<endl;
+            }
             
-                cout<<"winrate:"<<agent.Nodes[agent.root_idx].Mean <<endl;
-                info <<"chlice:" << nx_move;
-
-                return 0;
-            #endif
+            return 0;
         #else
             // -------OLD MCS-----------------------------
 

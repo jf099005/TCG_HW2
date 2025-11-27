@@ -13,6 +13,7 @@ class MCTS_agent{
         // MCTS_agent() = default;
 
         MCTS_agent(Color p_c, Position initial_pos, double initial_coeff = 1.0, int n_simulate_leaf = 5);
+        ~MCTS_agent();
         void reset(Color p_c, Position initial_pos);
         void MCTS_simulate(int N_simulate, double time_constraint = 5.0);
         bool MCTS_iteration();//return true if early-stop
@@ -75,30 +76,34 @@ class MCTS_agent{
 
             //return the result of simulate in a given number of simulation
             //w.r.t. the player of pos
-            Score simulate(Position pos, int n_simulate);
+            // Score simulate(Position pos, int n_simulate);
             Score simulate_AMAF(Position pos, int n_simulate, MOVE_RECORDER* moves_record);
             // Score pos_simulate(Position pos);
 
-            //used for back_propregation
+            //used for back_propagation
             void update_node(Node* node, Score score, int n_simulate);//w: number of winning, n: total number of simulation
 
             //node: original node, not amaf node
-            void update_node_AMAF(Node* node, Score score, int n_simulate, MOVE_RECORDER* recorder);//w: number of winning, n: total number of simulation
-            void update_node_RAVE(Node* node, Score score, int n_simulate, MOVE_RECORDER* recorder);//w: number of winning, n: total number of simulation
+            //return the amaf n_simulation
+            int update_AMAF_leaf(Node* node, Score score, MOVE_RECORDER* recorder);//w: number of winning, n: total number of simulation
             
-            void back_propregation(Node* leaf, Score score, int n_simulate);
+            void back_propagation(Node* leaf, Score score, int n_simulate);
             
-            void back_propregation_RAVE(Node* leaf, Score score, int n_simulate, MOVE_RECORDER* moves_record);
+            void back_propagation_RAVE(
+                Node* leaf, \
+                Score score, Score score_amaf,\
+                int n_simulate, int n_AMAF
+            );
 
         //utils for expansion
             //UCB-score of node_id w.r.t. its parent color
             long double UCB_RAVE(Node* node, Node* parent);
             long double UCB(Node* node, Node* parent);
             
-            double beta;
+            double beta = 1.0;
             int N, N_AMAF;
             void update_beta(){
-                beta = 1 - min(1.0, double(N)/10000);
+                this->beta = 1 - min(1.0, double(N)/100000.0);
             };
 };
 
