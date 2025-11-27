@@ -229,7 +229,7 @@ Score MCTS_agent::simulate_AMAF(Position pos, int n_simulate, MOVE_RECORDER* mov
     Score total_score = 0;
     while(n_simulate--){
         // total_score += pos_simulate(pos);
-        total_score += pos_simulate::simulate_and_record(pos, moves_recorder);
+        total_score += pos_simulate::simulate_and_record(pos, this->player_color, moves_recorder);
     }
     return total_score;
 }

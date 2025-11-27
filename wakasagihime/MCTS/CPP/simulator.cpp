@@ -97,7 +97,7 @@ Score pos_simulate::simulate(Position pos){
 }
 
 
-Score pos_simulate::simulate_and_record(Position pos, MOVE_RECORDER* move_recorder){
+Score pos_simulate::simulate_and_record(Position pos, Color player_color, MOVE_RECORDER* move_recorder){
     Position copy(pos);
     Color winner = copy.winner();
 
@@ -117,10 +117,14 @@ Score pos_simulate::simulate_and_record(Position pos, MOVE_RECORDER* move_record
         // if(winner == NO_COLOR and apply_early_stop)
         //     winner = early_stop(copy);
     }
-    if (copy.winner() == pos.due_up()) {
+    if (winner == pos.due_up()) {
         return win_score;
-    } else if (copy.winner() == Mystery) {
-        return tie_score;
+    } else if (winner == Mystery) {
+        if(pos.due_up() != player_color)
+            return tie_score;
+        else{
+            return -tie_score;
+        }
     }
     return -win_score;
 
