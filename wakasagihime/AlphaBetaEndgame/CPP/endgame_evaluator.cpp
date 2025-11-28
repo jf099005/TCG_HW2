@@ -1,8 +1,11 @@
-#include"evaluator.h"
-
-int pieces_score(Position pos, Color side){
+#include"endgame_evaluator.h"
+#include"board_analyzer.h"
+int pieces_score(const Position &pos, Board pieces_location){
     int score = 0;
-     
+    for(Square sq: BoardView(pieces_location)){
+        score += Piece_Value[ pos.peek_piece_at(sq).type ];
+    }
+    return score;
 }
 
 int endgame_evaluator::evaluate(Position pos, Color side){
@@ -10,8 +13,9 @@ int endgame_evaluator::evaluate(Position pos, Color side){
     Color opponent = (side == Black? Red:Black);
     Board player_pieces = pos.pieces(side);
     Board opponent_pieces = pos.pieces(opponent);
+
     int total_piece_distance = 0;
-    int total_piece_score = 0;
+    int total_piece_score = pieces_score(pos, side) - pieces_score(pos, opponent);
 
     for(Square sq_p: BoardView(player_pieces)){
         for(Square sq_o: BoardView(opponent_pieces)){
@@ -22,7 +26,7 @@ int endgame_evaluator::evaluate(Position pos, Color side){
         }
     }
 
-    assert(total_piece_score > 0);
+    // assert(total_piece_score > 0);
     
     return C*total_piece_score - total_piece_distance;
 }

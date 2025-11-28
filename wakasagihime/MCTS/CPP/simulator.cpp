@@ -1,20 +1,10 @@
 #include"simulator.h"
 #include<algorithm>
 #include<map>
-
+#include"board_analyzer.h"
 const int normal_move_score = 1;
 // const int suicide_move_score = 2;
 const int capture_move_score = 10;
-
-map<PieceType, int> Piece_Value = {
-    {General, 7},
-    {Advisor, 8},
-    {Elephant, 6},
-    {Chariot, 5},
-    {Horse, 3},
-    {Cannon, 9},
-    {Soldier, 1}
-};
 
 int pos_simulate::move_evaluate(const Position& pos, Move move){
     PieceType s = pos.peek_piece_at(move.from()).type;

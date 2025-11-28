@@ -1,7 +1,9 @@
 #include"node.h"
-#ifndef SIMULATOR
-#define SIMULATOR 1
+#ifndef __SIMULATOR__
+#define __SIMULATOR__
+
 #include<map>
+
 typedef long double Score;
 typedef map<Move, int> MOVE_RECORDER;
 

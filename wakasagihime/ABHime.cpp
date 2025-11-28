@@ -60,7 +60,7 @@ int main()
     
     while (getline(std::cin, line)) {
         Position pos(line);
-        AlphaBetaEndgameSolver ab_solver(pos.due_up(), 4);
+        AlphaBetaEndgameSolver ab_solver(pos.due_up());
         info << pos;
 
         ab_solver.Negamax(pos, 4);

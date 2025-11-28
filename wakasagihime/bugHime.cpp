@@ -10,6 +10,7 @@
 #define USE_MCTS 1
 #ifdef USE_MCTS
 #include"mcts_agent.h"
+#include"AlphaBetaEndgame/H/AB_agent.h"
 #endif
 
 #define MY_AGENT 1
@@ -62,12 +63,12 @@ int main()
         #ifndef ONLY_MCS
             int N_simulate = 1000;
             MCTS_agent agent(Red, pos_init, 100.0, 1);
+            AlphaBetaEndgameSolver ab_solver();
         #else
             int N_simulate = 1;
             MCTS_agent agent(Red, pos_init, 1, 1000);
         #endif
     #endif
-    cout<<"initial N:" << agent.N <<"/" <<agent.N_AMAF <<endl;
 
     while (getline(std::cin, line)) {
         Position pos(line);
