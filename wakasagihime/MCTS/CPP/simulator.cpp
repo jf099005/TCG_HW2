@@ -24,7 +24,12 @@ int pos_simulate::move_evaluate(const Position& pos, Move move){
     if( e != NO_PIECE){
         int score = capture_move_score;
         score += Piece_Value[e];
-        score -= (Piece_Value[s] >> 1);
+        if(e == Cannon){
+            score -= (Piece_Value[s] >> 1);
+        }
+        else{
+            score += (Piece_Value[s] >> 1);
+        }
         return score;
     }
     
