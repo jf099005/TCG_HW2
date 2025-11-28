@@ -9,7 +9,7 @@ int pieces_score(const Position &pos, Board pieces_location){
 }
 
 int endgame_evaluator::evaluate(Position pos, Color side){
-    static const int C = 10;
+    static const int C = 100;
     Color opponent = (side == Black? Red:Black);
     Board player_pieces = pos.pieces(side);
     Board opponent_pieces = pos.pieces(opponent);
@@ -19,7 +19,10 @@ int endgame_evaluator::evaluate(Position pos, Color side){
 
     for(Square sq_p: BoardView(player_pieces)){
         for(Square sq_o: BoardView(opponent_pieces)){
-            if(pos.peek_piece_at(sq_p).type > pos.peek_piece_at(sq_o).type){
+            PieceType player_type = pos.peek_piece_at(sq_p).type;
+            PieceType opponent_type = pos.peek_piece_at(sq_o).type;
+            if(player_type > opponent_type and 
+                                    !(opponent_type > player_type)){
                 int piece_dis = distance<Square>(sq_p, sq_o);
                 total_piece_distance += piece_dis;
             }
@@ -28,5 +31,8 @@ int endgame_evaluator::evaluate(Position pos, Color side){
 
     // assert(total_piece_score > 0);
     
-    return C*total_piece_score - total_piece_distance;
+    int score = C*total_piece_score - total_piece_distance;
+    if(pos.due_up() != side)
+        score = -score;
+    return score;
 }

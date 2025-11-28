@@ -8,4 +8,6 @@
 
 extern std::map<PieceType, int> Piece_Value;
 
+Color is_endgame(Position pos);
+
 #endif
