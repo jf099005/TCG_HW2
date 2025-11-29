@@ -2,7 +2,7 @@
 
 const static int move_penalty = 10000;
 
-int AlphaBetaEndgameSolver::Negamax(Position pos, int depth, int alpha, int beta){
+int AlphaBetaEndgameSolver::Negamax(Position pos, int depth, int remain_moves, int alpha, int beta){
     if(pos.winner() != NO_COLOR){
         // if(pos.winner() == pos.due_up()){
         //     return score_mx;
@@ -14,22 +14,37 @@ int AlphaBetaEndgameSolver::Negamax(Position pos, int depth, int alpha, int beta
             return 0;
         return -score_mx;
     }
+    if(remain_moves == 0){
+        if(pos.due_up() != solver_color)
+            return score_mx;
+        return -score_mx;
+    }
     
     if(depth == 0){
-        return endgame_evaluator::evaluate(pos, solver_color);
+        int score =  endgame_evaluator::evaluate(pos, solver_color);
+        if(pos.due_up() == solver_color)
+            return score;
+        return -score;
     }
 
     int opt = -score_mx;
     MoveList<> nx_moves(pos);
-
     for(Move nx_move: nx_moves){
         Position pos_nx(pos);
 
         pos_nx.do_move(nx_move);
-        if(pos_nx.winner() != NO_COLOR){
-            return score_mx;
-        }
-        int v = -Negamax(pos_nx, depth-1, -beta, -opt) - move_penalty;
+        // if(pos_nx.winner() != NO_COLOR){
+        //     if(pos_nx.winner() == solver_color)
+        //         return score_mx;
+        //     // continue;
+        // }
+        int v = -Negamax(pos_nx, depth-1, remain_moves-1, -beta, -opt);
+        
+        if(pos.due_up() == solver_color)
+            v -= move_penalty;
+        else
+            v += move_penalty;
+
         if(depth == depth_limit){
             debug << nx_move <<":" << v <<endl;
         }

@@ -13,7 +13,7 @@ class AlphaBetaEndgameSolver{
             depth_limit = depth;
         }
         
-        int Negamax(Position pos, int depth, int alpha = -score_mx, int beta = score_mx);
+        int Negamax(Position pos, int depth, int remain_moves, int alpha = -score_mx, int beta = score_mx);
         int depth_limit;
         Color solver_color;
 };

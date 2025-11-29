@@ -60,9 +60,12 @@ int main()
     /* read input board state */
     Position pos_init;        
 
-    int N_simulate = 5000;
-    int ab_depth = 6;
-    MCTS_agent agent(Red, pos_init, 1, 1);
+    int N_simulate = 10000;
+    int ab_depth = 8;
+    int remain_moves = 30;
+    int num_red_pieces = 16;
+    int num_black_pieces = 16;
+    MCTS_agent agent(Red, pos_init, 1.0, 1);
 
     while (getline(std::cin, line)) {
         Position pos(line);
@@ -72,10 +75,21 @@ int main()
         // Color endgame = is_endgame(pos);
         int red_count = pos.count(Red);
         int black_count = pos.count(Black);
+        if(num_red_pieces > red_count){
+            num_red_pieces = red_count;
+            remain_moves = 30;
+        }
+
+        if(num_black_pieces > black_count){
+            num_black_pieces = black_count;
+            remain_moves = 30;
+        }
+
         // if(endgame != NO_COLOR and endgame == pos.due_up()){
-        if(red_count <= 3 or black_count <= 3){
+        int opponent_count = (pos.due_up() != Red?red_count:black_count);
+        if(opponent_count <= 3){
             debug << "endgame mode\n";
-            ab_solver.Negamax(pos, ab_depth);
+            ab_solver.Negamax(pos, ab_depth, remain_moves);
 
             info << ab_solver.opt_solution;
         }
@@ -87,8 +101,12 @@ int main()
 
             Move nx_move = agent.opt_solution();
             debug << nx_move;
+            debug << "N:" << agent.N << ", AMAF:" << agent.N_AMAF <<endl;
+
             info << nx_move;
         }
+
+        remain_moves--;
         // return 0;
     }
 }

@@ -81,12 +81,13 @@ Score pos_simulate::simulate(Position pos){
         // if(winner == NO_COLOR and apply_early_stop)
         //     winner = early_stop(copy);
     }
+    Score board_score = pieces_score(copy, copy.pieces());
     if (copy.winner() == pos.due_up()) {
-        return win_score;
+        return board_score;
     } else if (copy.winner() == Mystery) {
         return tie_score;
     }
-    return -win_score;
+    return -board_score;
 
     return 0;
 }

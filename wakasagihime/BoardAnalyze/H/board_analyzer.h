@@ -10,4 +10,6 @@ extern std::map<PieceType, int> Piece_Value;
 
 Color is_endgame(Position pos);
 
+int pieces_score(const Position &pos, Board pieces_location);
+
 #endif

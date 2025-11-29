@@ -17,3 +17,9 @@ ackN1p2/2e2rr1/2pea3/6p1 r
 
 //debug
 1k6/Ra6/1p2r3/1a1P1cne r
+
+//debug
+3e4/3e3k/P4P1C/1aa5 r
+
+//debug
+5P2/k3c2A/2K5/ar2E2n b
