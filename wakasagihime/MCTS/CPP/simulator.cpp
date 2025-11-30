@@ -66,31 +66,31 @@ Move pos_simulate::stone_power_greedy_strategy(const Position& pos, MoveList<> &
 //     return 0;
 // }
 
-Score pos_simulate::simulate(Position pos){
-    Position copy(pos);
-    Color winner = copy.winner();
+// Score pos_simulate::simulate(Position pos){
+//     Position copy(pos);
+//     Color winner = copy.winner();
 
-    // bool apply_early_stop = (early_stop(pos) == NO_COLOR);
+//     // bool apply_early_stop = (early_stop(pos) == NO_COLOR);
 
-    while (winner == NO_COLOR) {
-        MoveList moves(copy);
-        // Move move = moves[rng(moves.size())];
-        Move move = stone_power_greedy_strategy(copy, moves);
-        copy.do_move(move);
-        winner = copy.winner();
-        // if(winner == NO_COLOR and apply_early_stop)
-        //     winner = early_stop(copy);
-    }
-    Score board_score = pieces_score(copy, copy.pieces());
-    if (copy.winner() == pos.due_up()) {
-        return board_score;
-    } else if (copy.winner() == Mystery) {
-        return tie_score;
-    }
-    return -board_score;
+//     while (winner == NO_COLOR) {
+//         MoveList moves(copy);
+//         // Move move = moves[rng(moves.size())];
+//         Move move = stone_power_greedy_strategy(copy, moves);
+//         copy.do_move(move);
+//         winner = copy.winner();
+//         // if(winner == NO_COLOR and apply_early_stop)
+//         //     winner = early_stop(copy);
+//     }
+//     Score board_score = pieces_score(copy, copy.pieces());
+//     if (copy.winner() == pos.due_up()) {
+//         return board_score;
+//     } else if (copy.winner() == Mystery) {
+//         return tie_score;
+//     }
+//     return -board_score;
 
-    return 0;
-}
+//     return 0;
+// }
 
 
 Score pos_simulate::simulate_and_record(Position pos, Color player_color, MOVE_RECORDER* move_recorder){
@@ -113,8 +113,11 @@ Score pos_simulate::simulate_and_record(Position pos, Color player_color, MOVE_R
         // if(winner == NO_COLOR and apply_early_stop)
         //     winner = early_stop(copy);
     }
+
+    Score board_score = pieces_score(copy, copy.pieces());
+
     if (winner == pos.due_up()) {
-        return win_score;
+        return board_score;
     } else if (winner == Mystery) {
         if(pos.due_up() != player_color)
             return tie_score;
@@ -122,7 +125,7 @@ Score pos_simulate::simulate_and_record(Position pos, Color player_color, MOVE_R
             return -tie_score;
         }
     }
-    return -win_score;
+    return -board_score;
 
     return 0;
 }

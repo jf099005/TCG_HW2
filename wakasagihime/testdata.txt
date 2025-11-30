@@ -23,3 +23,6 @@ ackN1p2/2e2rr1/2pea3/6p1 r
 
 //debug
 5P2/k3c2A/2K5/ar2E2n b
+
+//illegal move
+PE4a1/a4e1r/1pP3pn/3encpr r

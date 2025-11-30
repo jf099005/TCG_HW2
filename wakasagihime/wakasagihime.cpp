@@ -60,7 +60,7 @@ int main()
     /* read input board state */
     Position pos_init;        
 
-    int N_simulate = 10000;
+    int N_simulate = 1000;
     int ab_depth = 8;
     int remain_moves = 30;
     int num_red_pieces = 16;
@@ -70,6 +70,7 @@ int main()
     while (getline(std::cin, line)) {
         Position pos(line);
         AlphaBetaEndgameSolver ab_solver(pos.due_up(), ab_depth);
+        
         debug << pos;
 
         // Color endgame = is_endgame(pos);
@@ -86,6 +87,7 @@ int main()
         }
 
         // if(endgame != NO_COLOR and endgame == pos.due_up()){
+        remain_moves = 27;
         int opponent_count = (pos.due_up() != Red?red_count:black_count);
         if(opponent_count <= 3){
             debug << "endgame mode\n";
@@ -100,7 +102,7 @@ int main()
             agent.MCTS_simulate(N_simulate);
 
             Move nx_move = agent.opt_solution();
-            debug << nx_move;
+            debug << "mv:" << nx_move;
             debug << "N:" << agent.N << ", AMAF:" << agent.N_AMAF <<endl;
 
             info << nx_move;
