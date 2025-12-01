@@ -47,53 +47,13 @@ Move pos_simulate::stone_power_greedy_strategy(const Position& pos, MoveList<> &
     return moves[idx];
 }
 
+int pos_simulate::encode_move(Color side, Move mv){
+    int idx = mv.from()*32 + mv.to();
+    idx += (side == Red)*1024;
+    return idx;
+}
 
-//stable version
-// Score pos_simulate::simulate(Position pos){
-//     Position copy(pos);
-//     while (copy.winner() == NO_COLOR) {
-//         MoveList moves(copy);
-//         Move rd_move = moves[rng(moves.size())];
-//         copy.do_move(rd_move);
-//     }
-//     if (copy.winner() == pos.due_up()) {
-//         return win_score;
-//     } else if (copy.winner() == Mystery) {
-//         return tie_score;
-//     }
-//     return -win_score;
-
-//     return 0;
-// }
-
-// Score pos_simulate::simulate(Position pos){
-//     Position copy(pos);
-//     Color winner = copy.winner();
-
-//     // bool apply_early_stop = (early_stop(pos) == NO_COLOR);
-
-//     while (winner == NO_COLOR) {
-//         MoveList moves(copy);
-//         // Move move = moves[rng(moves.size())];
-//         Move move = stone_power_greedy_strategy(copy, moves);
-//         copy.do_move(move);
-//         winner = copy.winner();
-//         // if(winner == NO_COLOR and apply_early_stop)
-//         //     winner = early_stop(copy);
-//     }
-//     Score board_score = pieces_score(copy, copy.pieces());
-//     if (copy.winner() == pos.due_up()) {
-//         return board_score;
-//     } else if (copy.winner() == Mystery) {
-//         return tie_score;
-//     }
-//     return -board_score;
-
-//     return 0;
-// }
-
-
-Score pos_simulate::simulate_and_record(Position pos, Color player_color, MOVE_RECORDER* move_recorder){
+Score pos_simulate::simulate_and_record(Position pos, Color player_color, MOVE_RECORDER* move_recorder, int remain_moves){
     Position copy(pos);
     Color winner = copy.winner();
 
@@ -101,15 +61,27 @@ Score pos_simulate::simulate_and_record(Position pos, Color player_color, MOVE_R
 
     while (winner == NO_COLOR) {
         MoveList moves(copy);
+        remain_moves--;
         // Move move = moves[rng(moves.size())];
         Move move = stone_power_greedy_strategy(copy, moves);
-        copy.do_move(move);
-        if(move_recorder->find(move) == move_recorder->end())
-            (*move_recorder)[move] = 1;
+        if(copy.peek_piece_at( move.to() ).type != NO_PIECE){
+            remain_moves = 30;
+        }
 
-        (*move_recorder)[move] += 1;
+        int move_idx = encode_move(copy.due_up(), move);
+
+        copy.do_move(move);
+
+        (*move_recorder)[move_idx]++;
+        // if(move_recorder->find(move) == move_recorder->end())
+        //     (*move_recorder)[move] = 1;
+
+        // (*move_recorder)[move] += 1;
 
         winner = copy.winner();
+        if(remain_moves == 0){
+            winner = Mystery;
+        }
         // if(winner == NO_COLOR and apply_early_stop)
         //     winner = early_stop(copy);
     }

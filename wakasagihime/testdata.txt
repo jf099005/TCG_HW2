@@ -2,6 +2,8 @@ EenCPKAr/PaeCErpc/ApanpcPN/pkPpNRRP r
 
 1p1a4/6kn/2P4r/1R3NC1 r
 
+
+//N_amaf > N
 4e3/p1aeP2k/6C1/a7 r
 
 //bug for N_amaf > N
@@ -26,3 +28,6 @@ ackN1p2/2e2rr1/2pea3/6p1 r
 
 //illegal move
 PE4a1/a4e1r/1pP3pn/3encpr r
+
+//illegal move
+r1aPK1P1/3n3P/1E2P1A1/5r2 b

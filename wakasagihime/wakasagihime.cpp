@@ -60,9 +60,9 @@ int main()
     /* read input board state */
     Position pos_init;        
 
-    int N_simulate = 1000;
+    int N_simulate = 5000;
     int ab_depth = 8;
-    int remain_moves = 30;
+    int remain_moves = 31;
     int num_red_pieces = 16;
     int num_black_pieces = 16;
     MCTS_agent agent(Red, pos_init, 1.0, 1);
@@ -78,17 +78,18 @@ int main()
         int black_count = pos.count(Black);
         if(num_red_pieces > red_count){
             num_red_pieces = red_count;
-            remain_moves = 30;
+            remain_moves = 31;
         }
 
         if(num_black_pieces > black_count){
             num_black_pieces = black_count;
-            remain_moves = 30;
+            remain_moves = 31;
         }
 
         // if(endgame != NO_COLOR and endgame == pos.due_up()){
-        remain_moves = 27;
+        // remain_moves = 27;
         int opponent_count = (pos.due_up() != Red?red_count:black_count);
+        opponent_count = 100;
         if(opponent_count <= 3){
             debug << "endgame mode\n";
             ab_solver.Negamax(pos, ab_depth, remain_moves);

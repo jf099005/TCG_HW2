@@ -14,7 +14,7 @@ class MCTS_agent{
 
         MCTS_agent(Color p_c, Position initial_pos, double initial_coeff = 1.0, int n_simulate_leaf = 5);
         ~MCTS_agent();
-        void reset(Color p_c, Position initial_pos);
+        void reset(Color p_c, Position initial_pos, int remain_moves = 30);
         void MCTS_simulate(int N_simulate, double time_constraint = 5.0);
         bool MCTS_iteration();//return true if early-stop
         Move opt_solution();
@@ -22,6 +22,7 @@ class MCTS_agent{
         Color player_color;
         // when expand, simulate n_simulate_expand times for each new leaves 
         int n_simulate_expand;
+        int remain_moves;
 
 
     
@@ -32,6 +33,11 @@ class MCTS_agent{
             Node *AMAF_Nodes;
             Node* root;
             int maximum_node_idx;
+            int estimate_total_simulate;
+
+            void estimate(int n){
+                this->estimate_total_simulate = n*30;
+            }
 
             Node* create_root(const Color &cur_color){
                 Node root =  Node(cur_color,  maximum_node_idx);
@@ -66,6 +72,7 @@ class MCTS_agent{
             int root_idx;
             double Exploration_coeff;
             //return the index and the position of the leaf in PV
+            int PV_remain_moves;
             pair<Node*, Position> search_pv();
 
             //find the maximum children
@@ -76,18 +83,14 @@ class MCTS_agent{
 
             //return the result of simulate in a given number of simulation
             //w.r.t. the player of pos
-            // Score simulate(Position pos, int n_simulate);
-            Score simulate_AMAF(Position pos, int n_simulate, MOVE_RECORDER* moves_record);
-            // Score pos_simulate(Position pos);
+            Score simulate_AMAF(Position pos, int n_simulate, MOVE_RECORDER* moves_record, int remain_moves);
 
             //used for back_propagation
             void update_node(Node* node, Score score, int n_simulate);//w: number of winning, n: total number of simulation
 
             //node: original node, not amaf node
             //return the amaf n_simulation
-            int update_AMAF_leaf(Node* node, Score score, MOVE_RECORDER* recorder);//w: number of winning, n: total number of simulation
-            
-            void back_propagation(Node* leaf, Score score, int n_simulate);
+            int update_AMAF_leaf(Node* node, Color leaf_color, Score score, MOVE_RECORDER* recorder);//w: number of winning, n: total number of simulation
             
             void back_propagation_RAVE(
                 Node* leaf, \
@@ -102,7 +105,22 @@ class MCTS_agent{
             
             double beta = 1.0;
             int N, N_AMAF;
+            double calculate_beta(Node* node){
+                const static double b = 0.0001;
+                Node* amaf_node = get_AMAF_Node(node);
+                int node_N = node->Ntotal;
+                int node_N_amaf = amaf_node->Ntotal;
+                if(node_N == 0)
+                    return 0.9;
+                beta =  node_N_amaf / (node_N + node_N_amaf + 4*b*node_N*node_N_amaf);
+                return beta;
+            }
+
             void update_beta(){
+                const static double b = 0.01;
+                // this->beta = (this->N_AMAF)\
+                //              /(this->N + this->N_AMAF + 4*b*this->N*this->N_AMAF);
+                // this->beta = 0;
                 this->beta = 1 - min(1.0, double(N)/100000.0);
             };
 };

@@ -40,6 +40,7 @@ typedef struct MCT_node{
         score_sum = 0;
         sq_score_sum = 0;
         can_expand = 1;
+        Mean = 0;
     }
     MCT_node(Color cur_color, int root_id){
         // color = cur_color;
@@ -52,6 +53,7 @@ typedef struct MCT_node{
         score_sum = 0;
         sq_score_sum = 0;
         can_expand = 1;
+        Mean = 0;
     }
 
     //for others
@@ -81,6 +83,7 @@ typedef struct MCT_node{
         sq_score_sum = 0;
         can_expand = 1;
         move = child_move;
+        Mean = 0;
     }
 
     /*    constexpr Move &operator=(const Move &other)
