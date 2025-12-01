@@ -29,6 +29,7 @@ typedef struct MCT_node{
     long double Mean; // average score
     long double Variance; // variance of score
     bool can_expand;
+    bool is_activated;
     //for root
     MCT_node(){
         // color = Red;
@@ -41,6 +42,7 @@ typedef struct MCT_node{
         sq_score_sum = 0;
         can_expand = 1;
         Mean = 0;
+        is_activated = true;
     }
     MCT_node(Color cur_color, int root_id){
         // color = cur_color;
@@ -54,6 +56,8 @@ typedef struct MCT_node{
         sq_score_sum = 0;
         can_expand = 1;
         Mean = 0;
+
+        is_activated = true;
     }
 
     //for others
@@ -84,6 +88,7 @@ typedef struct MCT_node{
         can_expand = 1;
         move = child_move;
         Mean = 0;
+        is_activated = true;
     }
 
     /*    constexpr Move &operator=(const Move &other)

@@ -1,7 +1,7 @@
 #include"simulator.h"
 #include<algorithm>
 #include<map>
-#include"board_analyzer.h"
+#include"../BoardAnalyze/H/board_analyzer.h"
 const int normal_move_score = 1;
 // const int suicide_move_score = 2;
 const int capture_move_score = 10;
@@ -53,6 +53,17 @@ int pos_simulate::encode_move(Color side, Move mv){
     return idx;
 }
 
+int max_piece_score(Position pos, Board pieces){
+    int mx = 0;
+    for(Square sq: BoardView(pieces)){
+        PieceType pt = pos.peek_piece_at(sq).type;
+        if(pt != Cannon){
+            mx = max(mx, Piece_Value[pt]);
+        }
+    }
+    return mx;
+}
+
 Score pos_simulate::simulate_and_record(Position pos, Color player_color, MOVE_RECORDER* move_recorder, int remain_moves){
     Position copy(pos);
     Color winner = copy.winner();
@@ -86,7 +97,7 @@ Score pos_simulate::simulate_and_record(Position pos, Color player_color, MOVE_R
         //     winner = early_stop(copy);
     }
 
-    Score board_score = pieces_score(copy, copy.pieces());
+    Score board_score = max_piece_score(copy, copy.pieces());
 
     if (winner == pos.due_up()) {
         return board_score;

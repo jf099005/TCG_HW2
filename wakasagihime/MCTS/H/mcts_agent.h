@@ -3,6 +3,7 @@
 #include<map>
 #ifndef _MCTS_H_
 #define _MCTS_H_
+
 #define AMAF 1
 #define DEFAULT_N_SIMULATE 1
 
@@ -88,13 +89,17 @@ class MCTS_agent{
             //used for back_propagation
             void update_node(Node* node, Score score, int n_simulate);//w: number of winning, n: total number of simulation
 
+
+            void cut_child(Node* parent, Node* child);
+
+            void progressive_cut(Node* node);
             //node: original node, not amaf node
             //return the amaf n_simulation
             int update_AMAF_leaf(Node* node, Color leaf_color, Score score, MOVE_RECORDER* recorder);//w: number of winning, n: total number of simulation
             
             void back_propagation_RAVE(
                 Node* leaf, \
-                Score score, Score score_amaf,\
+                Score avg_score,\
                 int n_simulate, int n_AMAF
             );
 

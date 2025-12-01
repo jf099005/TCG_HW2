@@ -65,7 +65,7 @@ int main()
     int remain_moves = 31;
     int num_red_pieces = 16;
     int num_black_pieces = 16;
-    MCTS_agent agent(Red, pos_init, 1.0, 1);
+    MCTS_agent agent(Red, pos_init, 10.0, 1);
 
     while (getline(std::cin, line)) {
         Position pos(line);

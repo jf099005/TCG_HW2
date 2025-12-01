@@ -3,7 +3,8 @@
 #include<cassert>
 #include"mcts_agent.h"
 #include"helper.h"
-#include"board_analyzer.h"
+#include"../BoardAnalyze/H/board_analyzer.h"
+
 #include<cmath>
 using namespace std;
 
@@ -101,16 +102,15 @@ bool MCTS_agent::MCTS_iteration(){
         expand(PV_leaf, leaf_pos);
     }
     else{
-        Score score;
+        Score avg_score;
         Score all_pieces_score = pieces_score(leaf_pos, leaf_pos.pieces(ALL_PIECES));
-        if(leaf_pos.winner() == Mystery)score = pos_simulate::tie_score;
+        if(leaf_pos.winner() == Mystery)avg_score = pos_simulate::tie_score;
         else{
-            score = leaf_pos.winner() == leaf_pos.due_up() ?\
+            avg_score = leaf_pos.winner() == leaf_pos.due_up() ?\
                         all_pieces_score : -all_pieces_score;
         }
-        score *= n_simulate_expand;
         this->N += n_simulate_expand;
-        back_propagation_RAVE(PV_leaf, score, score, n_simulate_expand, n_simulate_expand);
+        back_propagation_RAVE(PV_leaf, avg_score, n_simulate_expand, n_simulate_expand);
         // cout<<"reach endgame:" << leaf_pos;
         return false;
     }
@@ -134,22 +134,22 @@ bool MCTS_agent::MCTS_iteration(){
         moves_record[child_move_idx]++;
         
         pos_child.do_move( child->move );
-        Score simulate_solution;
+        Score avg_simulate_solution;
         
-        simulate_solution = simulate_AMAF(pos_child, this->n_simulate_expand, &moves_record, this->PV_remain_moves);
-        total_score += -simulate_solution;
+        avg_simulate_solution = simulate_AMAF(pos_child, this->n_simulate_expand, &moves_record, this->PV_remain_moves);
+        total_score += -avg_simulate_solution*(this->n_simulate_expand);
         total_N_simulation += this->n_simulate_expand;
         this->N += n_simulate_expand;
 
-        update_node(child, simulate_solution, this->n_simulate_expand);
-        update_node(child_amaf, simulate_solution, this->n_simulate_expand);
+        update_node(child, avg_simulate_solution, this->n_simulate_expand);
+        // update_node(child_amaf, avg_simulate_solution, this->n_simulate_expand);
     }
 
     Score avg_score = total_score / total_N_simulation;
     int leaf_N_amaf = update_AMAF_leaf(PV_leaf, leaf_pos.due_up(), avg_score, &moves_record);
 
     Score amaf_score = avg_score*leaf_N_amaf;
-    back_propagation_RAVE(PV_leaf, total_score, amaf_score, total_N_simulation, leaf_N_amaf);
+    back_propagation_RAVE(PV_leaf, avg_score, total_N_simulation, leaf_N_amaf);
 
 
     if(leaf_N_amaf < total_N_simulation){
@@ -250,24 +250,24 @@ void MCTS_agent::expand(Node* node, Position node_pos){
 }
 
 //simulate part
-    //version 0: default random simulate
+    //return the average score
 
 Score MCTS_agent::simulate_AMAF(Position pos, int n_simulate, MOVE_RECORDER* moves_recorder, int remain_moves){
     Score total_score = 0;
-    while(n_simulate--){
+    for(int i=0; i<n_simulate; i++){
         // total_score += pos_simulate(pos);
         total_score += pos_simulate::simulate_and_record(pos, this->player_color, moves_recorder, remain_moves);
     }
-    return total_score;
+    return total_score / n_simulate;
 }
 
 
 //back propagation part
-void MCTS_agent::update_node(Node* node, Score w, int n){
+void MCTS_agent::update_node(Node* node, Score avg_score, int n){
     // Node &cur_node = Nodes[node_idx];
     node->Ntotal += n;
-    node->score_sum += w;
-    node->sq_score_sum += w*w;
+    node->score_sum += avg_score*n;
+    node->sq_score_sum += avg_score*avg_score*n;
     node->sqrtN = sqrt(node->Ntotal);
     node->CsqrtlogN = 
         this->Exploration_coeff * sqrt(log(node->Ntotal));
@@ -277,14 +277,33 @@ void MCTS_agent::update_node(Node* node, Score w, int n){
     node->Variance = ((double)node->sq_score_sum/node->Ntotal - mean_sq);
 }
 
+void MCTS_agent::cut_child(Node* parent, Node* child){
+    parent->Ntotal -= child->Ntotal;
+    parent->score_sum -= child->score_sum;
+    parent->sq_score_sum -= child->sq_score_sum;
+    parent->sqrtN = sqrt(parent->Ntotal);
+    parent->CsqrtlogN = 
+        this->Exploration_coeff * sqrt(log(parent->Ntotal));
+    parent->Mean = (double)(parent->score_sum) / parent->Ntotal;
+    double mean_sq = parent->Mean;
+    mean_sq *= mean_sq;
+    parent->Variance = ((double)parent->sq_score_sum/parent->Ntotal - mean_sq);
+}
 //node: original node, not amaf node
 
-
+void MCTS_agent::progressive_cut(Node* node){
+    const double confidence = 2;
+    for(int i=0; i<node->Ntotal; i++){
+        Node* child = get_child(node, i);
+        Score branch_score = child->Mean;
+        
+        // branch_score += confidence*child->st
+    }
+}
 
 int MCTS_agent::update_AMAF_leaf(Node* leaf, Color leaf_color, Score avg_score, MOVE_RECORDER* move_recorder){
     Node* node_amaf = get_AMAF_Node(leaf);
     int node_N_amaf = 0;
-    Score total_score = 0.0;
     assert(leaf->Nchild > 0);
 
     assert(leaf_color == Red or leaf_color == Black);
@@ -297,30 +316,28 @@ int MCTS_agent::update_AMAF_leaf(Node* leaf, Color leaf_color, Score avg_score, 
             Node* child_amaf = get_AMAF_Node(child);
             int child_N = (*move_recorder)[child_move_idx];
             assert(child_N > 0 );
-            Score child_score = avg_score*child_N;
-            update_node( child_amaf, -child_score, child_N );
+            // Score child_score = avg_score*child_N;
+            update_node( child_amaf, avg_score, child_N );
             node_N_amaf += (*move_recorder)[child_move_idx];
-            total_score += child_score;
         }
     }
     N_AMAF += node_N_amaf;
     return node_N_amaf;
 }
 
-void MCTS_agent::back_propagation_RAVE(Node* leaf, Score score, Score amaf_score, int total_n_simulate, int N_amaf){
+void MCTS_agent::back_propagation_RAVE(Node* leaf, Score avg_score, int total_n_simulate, int N_amaf){
     Node* cur = leaf;
     Node* cur_amaf = get_AMAF_Node(cur);
-    this->update_node(cur, score, total_n_simulate);
-    this->update_node(cur_amaf, amaf_score, N_amaf);
+    this->update_node(cur, avg_score, total_n_simulate);
+    this->update_node(cur_amaf, avg_score, N_amaf);
     while(cur != nullptr){
-        score = -score;
-        amaf_score = -amaf_score;
+        avg_score = -avg_score;
         cur = cur->parent;
         if(cur == nullptr)
             return;
-        update_node(cur, score, total_n_simulate);
+        update_node(cur, avg_score, total_n_simulate);
         Node* cur_amaf = get_AMAF_Node(cur);
-        update_node(cur_amaf, amaf_score, N_amaf);
+        update_node(cur_amaf, avg_score, N_amaf);
 
         if(cur->parent == nullptr)
             break;
