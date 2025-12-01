@@ -60,7 +60,7 @@ int main()
     /* read input board state */
     Position pos_init;        
 
-    int N_simulate = 5000;
+    int N_simulate = 10000;
     int ab_depth = 8;
     int remain_moves = 31;
     int num_red_pieces = 16;
