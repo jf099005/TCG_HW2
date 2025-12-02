@@ -60,11 +60,10 @@ int main()
     /* read input board state */
     Position pos_init;        
 
-    int N_simulate = 10000;
+    int N_simulate = 1000;
     int ab_depth = 8;
-    int remain_moves = 31;
-    int num_red_pieces = 16;
-    int num_black_pieces = 16;
+    int remain_moves = 32;
+    int num_pieces = 32;
     MCTS_agent agent(Red, pos_init, 10.0, 1);
 
     while (getline(std::cin, line)) {
@@ -72,34 +71,34 @@ int main()
         AlphaBetaEndgameSolver ab_solver(pos.due_up(), ab_depth);
         
         debug << pos;
+        debug << "remain moves:" << remain_moves <<endl;
 
         // Color endgame = is_endgame(pos);
         int red_count = pos.count(Red);
         int black_count = pos.count(Black);
-        if(num_red_pieces > red_count){
-            num_red_pieces = red_count;
-            remain_moves = 31;
+        if( red_count + black_count != num_pieces){
+            remain_moves = 32;
+            num_pieces = red_count + black_count;
         }
 
-        if(num_black_pieces > black_count){
-            num_black_pieces = black_count;
-            remain_moves = 31;
-        }
+        // if(num_black_pieces > black_count){
+        //     num_black_pieces = black_count;
+        //     remain_moves = 40;
+        // }
 
         // if(endgame != NO_COLOR and endgame == pos.due_up()){
         // remain_moves = 27;
         int opponent_count = (pos.due_up() != Red?red_count:black_count);
-        opponent_count = 100;
+        // opponent_count = 100;
+        // remain_moves = 1;
         if(opponent_count <= 3){
             debug << "endgame mode\n";
             ab_solver.Negamax(pos, ab_depth, remain_moves);
-
             info << ab_solver.opt_solution;
         }
         else{
-
             debug << "mcts mode\n";
-            agent.reset(pos.due_up(), pos);
+            agent.reset(pos.due_up(), pos, remain_moves);
             agent.MCTS_simulate(N_simulate);
 
             Move nx_move = agent.opt_solution();
@@ -110,6 +109,7 @@ int main()
         }
 
         remain_moves--;
+
         // return 0;
     }
 }

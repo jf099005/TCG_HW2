@@ -53,12 +53,42 @@ int pos_simulate::encode_move(Color side, Move mv){
     return idx;
 }
 
+inline Color is_endgame(Position pos){
+
+    // return NO_COLOR;
+    bool red_win = true;
+    bool black_win = true;
+    for(Square sq_r: BoardView(pos.pieces(Red))){
+        PieceType R = pos.peek_piece_at(sq_r).type;
+        for(Square sq_b: BoardView( pos.pieces(Black) )){
+            PieceType B = pos.peek_piece_at(sq_b).type;
+            red_win &= !(B>R);
+            black_win &= !(R>B);
+            if(!(red_win or black_win))
+                break;
+        }
+        if(!(red_win or black_win))
+            break;
+    }
+
+
+    return red_win? Red : ( black_win? Black : NO_COLOR);
+}
+
+
 int max_piece_score(Position pos, Board pieces){
     int mx = 0;
+    int score = 0;
     for(Square sq: BoardView(pieces)){
         PieceType pt = pos.peek_piece_at(sq).type;
         if(pt != Cannon){
-            mx = max(mx, Piece_Value[pt]);
+            if(Piece_Value[pt] == mx)
+                score += mx;
+            if(Piece_Value[pt] > mx){
+                mx = Piece_Value[pt];
+                score = mx;
+            }
+            // mx = max(mx, Piece_Value[pt]);
         }
     }
     return mx;

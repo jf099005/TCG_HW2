@@ -9,6 +9,7 @@
 using namespace std;
 
 // #define DEBUG 1
+const int MAX_NON_CAPTURE_MOVE = 31;
 const int N_threshold = 10000;
 const long double inf = 1e9;
 MCTS_agent::MCTS_agent(Color p_c, Position initial_pos, double initial_coeff, int n_simulate_leaf):
@@ -68,14 +69,10 @@ Move MCTS_agent::opt_solution(){
 void MCTS_agent::MCTS_simulate(int N_simulate, double time_constraint){
     while(N_simulate--){
         if( MCTS_iteration() ){
-            // cout<<"remaining: " << N_simulate <<endl;
             return;
         }
     }
 }
-
-
-
 
 bool MCTS_agent::MCTS_iteration(){    
     #ifdef DEBUG
@@ -98,13 +95,14 @@ bool MCTS_agent::MCTS_iteration(){
     // moves_record.clear();
 
 
-    if(leaf_pos.winner() == NO_COLOR){
+    if(leaf_pos.winner() == NO_COLOR and this->PV_remain_moves > 0){
         expand(PV_leaf, leaf_pos);
     }
     else{
         Score avg_score;
         Score all_pieces_score = pieces_score(leaf_pos, leaf_pos.pieces(ALL_PIECES));
-        if(leaf_pos.winner() == Mystery)avg_score = pos_simulate::tie_score;
+        if(leaf_pos.winner() == Mystery or this->PV_remain_moves == 0)
+            avg_score = pos_simulate::tie_score;
         else{
             avg_score = leaf_pos.winner() == leaf_pos.due_up() ?\
                         all_pieces_score : -all_pieces_score;
@@ -180,7 +178,7 @@ pair<Node*, Position> MCTS_agent::search_pv(){
         Node* selected = this->select_maximum_child(cur);
         Move selected_move = selected->move;
         if( pos.peek_piece_at( selected_move.to() ).type != NO_PIECE ){
-            this->PV_remain_moves = 30;
+            this->PV_remain_moves = MAX_NON_CAPTURE_MOVE;
         }
         pos.do_move( selected->move );
         cur = selected;
@@ -278,6 +276,7 @@ void MCTS_agent::update_node(Node* node, Score avg_score, int n){
 }
 
 void MCTS_agent::cut_child(Node* parent, Node* child){
+    assert(child->is_activated);
     parent->Ntotal -= child->Ntotal;
     parent->score_sum -= child->score_sum;
     parent->sq_score_sum -= child->sq_score_sum;
@@ -288,6 +287,23 @@ void MCTS_agent::cut_child(Node* parent, Node* child){
     double mean_sq = parent->Mean;
     mean_sq *= mean_sq;
     parent->Variance = ((double)parent->sq_score_sum/parent->Ntotal - mean_sq);
+    child->is_activated = false;
+}
+
+
+void MCTS_agent::connect_child(Node* parent, Node* child){
+    assert(!child->is_activated);
+    parent->Ntotal += child->Ntotal;
+    parent->score_sum += child->score_sum;
+    parent->sq_score_sum += child->sq_score_sum;
+    parent->sqrtN = sqrt(parent->Ntotal);
+    parent->CsqrtlogN = 
+        this->Exploration_coeff * sqrt(log(parent->Ntotal));
+    parent->Mean = (double)(parent->score_sum) / parent->Ntotal;
+    double mean_sq = parent->Mean;
+    mean_sq *= mean_sq;
+    parent->Variance = ((double)parent->sq_score_sum/parent->Ntotal - mean_sq);
+    child->is_activated = true;
 }
 //node: original node, not amaf node
 
@@ -295,8 +311,17 @@ void MCTS_agent::progressive_cut(Node* node){
     const double confidence = 2;
     for(int i=0; i<node->Ntotal; i++){
         Node* child = get_child(node, i);
-        Score branch_score = child->Mean;
-        
+        Score branch_score = -child->Mean;
+        branch_score += confidence * sqrt(child->Variance);
+        if(branch_score < node->Mean){
+            if(child->is_activated)
+                cut_child(node, child);
+        }
+        else{
+            if(!child->is_activated){
+                connect_child(node, child);
+            }
+        }
         // branch_score += confidence*child->st
     }
 }

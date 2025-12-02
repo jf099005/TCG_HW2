@@ -91,6 +91,7 @@ class MCTS_agent{
 
 
             void cut_child(Node* parent, Node* child);
+            void connect_child(Node* parent, Node* child);
 
             void progressive_cut(Node* node);
             //node: original node, not amaf node
