@@ -33,6 +33,21 @@ MCTS_agent::~MCTS_agent(){
 }
 
 
+void MCTS_agent::print_node(Node* node){
+    debug << "current total simulation: " << this->N <<endl;
+    debug <<"avg: " << node->Mean <<", total sq: " << node->sq_score_sum <<", var: " << node->Variance <<endl;
+    debug <<"nodes:" <<endl;
+    int NT = 0;
+    for(int i=0; i<node->Nchild; i++){
+        Node* child = get_child(node, i);
+        NT += child->Ntotal;
+        debug << '\t' <<"child N: " << child->Ntotal << ", avg: " << child->Mean <<", total sq: " << child->sq_score_sum <<", var: " << child->Variance <<endl;
+        debug << "\t\t" <<"activated: " << child->is_activated <<endl;
+        debug << "\t\t\t accumulate: " << NT <<endl;
+    }
+
+}
+
 void MCTS_agent::reset(Color p_c, Position pos, int remain_moves){
     this->root_pos = pos;
     this->player_color = p_c;
@@ -210,6 +225,7 @@ long double MCTS_agent::UCB_RAVE(Node* node, Node* parent){
     // return ucb_origin;
 
     double node_beta = calculate_beta(node);
+    node_beta = 0;
     assert(0 <= node_beta);
     assert(node_beta <= 1);
 
@@ -217,13 +233,16 @@ long double MCTS_agent::UCB_RAVE(Node* node, Node* parent){
 }
 
 Node* MCTS_agent::select_maximum_child(Node* cur_node){//return the index of the child in Nodes
-    Node* selected = get_child(cur_node, 0);
+    Node* selected = nullptr; //(cur_node, 0);
     
     assert(cur_node->Nchild > 0);
 
-    double mx_UCB = this->UCB_RAVE( selected, cur_node );
-    for(int i=1; i< cur_node->Nchild; i++){
+    double mx_UCB = -inf;//this->UCB_RAVE( selected, cur_node );
+    for(int i=0; i< cur_node->Nchild; i++){
         Node* child = get_child(cur_node, i);
+        if(!(child->is_activated))
+            continue;
+
         double child_UCB = UCB_RAVE( child, cur_node );
         if( mx_UCB < child_UCB ){
             selected = child;
@@ -232,8 +251,6 @@ Node* MCTS_agent::select_maximum_child(Node* cur_node){//return the index of the
     }
     return selected;
 }
-
-
 
 //version 0: generate all next-moves
 void MCTS_agent::expand(Node* node, Position node_pos){
@@ -277,54 +294,102 @@ void MCTS_agent::update_node(Node* node, Score avg_score, int n){
 
 void MCTS_agent::cut_child(Node* parent, Node* child){
     assert(child->is_activated);
-    parent->Ntotal -= child->Ntotal;
-    parent->score_sum -= child->score_sum;
-    parent->sq_score_sum -= child->sq_score_sum;
-    parent->sqrtN = sqrt(parent->Ntotal);
-    parent->CsqrtlogN = 
-        this->Exploration_coeff * sqrt(log(parent->Ntotal));
-    parent->Mean = (double)(parent->score_sum) / parent->Ntotal;
-    double mean_sq = parent->Mean;
-    mean_sq *= mean_sq;
-    parent->Variance = ((double)parent->sq_score_sum/parent->Ntotal - mean_sq);
     child->is_activated = false;
+    // parent->Ntotal -= child->Ntotal;
+    // parent->score_sum -= (-child->score_sum);
+    // parent->sq_score_sum -= child->sq_score_sum;
+    // parent->sqrtN = sqrt(parent->Ntotal);
+    // parent->CsqrtlogN = 
+    //     this->Exploration_coeff * sqrt(log(parent->Ntotal));
+    // parent->Mean = (double)(parent->score_sum) / parent->Ntotal;
+    // double mean_sq = parent->Mean;
+    // mean_sq *= mean_sq;
+    // parent->Variance = ((double)parent->sq_score_sum/parent->Ntotal - mean_sq);
+    while(parent != nullptr){
+        parent->Ntotal -= child->Ntotal;
+        parent->score_sum -= (-child->score_sum);
+        parent->sq_score_sum -= child->sq_score_sum;
+        parent->sqrtN = sqrt(parent->Ntotal);
+        parent->CsqrtlogN = 
+            this->Exploration_coeff * sqrt(log(parent->Ntotal));
+        parent->Mean = (double)(parent->score_sum) / parent->Ntotal;
+        double mean_sq = parent->Mean;
+        mean_sq *= mean_sq;
+        parent->Variance = ((double)parent->sq_score_sum/parent->Ntotal - mean_sq);
+        child->is_activated = false;
+        parent = parent->parent;
+    }
 }
 
 
 void MCTS_agent::connect_child(Node* parent, Node* child){
-    assert(!child->is_activated);
-    parent->Ntotal += child->Ntotal;
-    parent->score_sum += child->score_sum;
-    parent->sq_score_sum += child->sq_score_sum;
-    parent->sqrtN = sqrt(parent->Ntotal);
-    parent->CsqrtlogN = 
-        this->Exploration_coeff * sqrt(log(parent->Ntotal));
-    parent->Mean = (double)(parent->score_sum) / parent->Ntotal;
-    double mean_sq = parent->Mean;
-    mean_sq *= mean_sq;
-    parent->Variance = ((double)parent->sq_score_sum/parent->Ntotal - mean_sq);
+    assert(!(child->is_activated));
     child->is_activated = true;
+
+    while(parent != nullptr){
+        parent->Ntotal += child->Ntotal;
+        parent->score_sum += (-child->score_sum);
+        parent->sq_score_sum += child->sq_score_sum;
+        parent->sqrtN = sqrt(parent->Ntotal);
+        parent->CsqrtlogN = 
+            this->Exploration_coeff * sqrt(log(parent->Ntotal));
+        parent->Mean = (double)(parent->score_sum) / parent->Ntotal;
+        double mean_sq = parent->Mean;
+        mean_sq *= mean_sq;
+        parent->Variance = ((double)parent->sq_score_sum/parent->Ntotal - mean_sq);
+        parent = parent->parent;
+    }
 }
 //node: original node, not amaf node
 
 void MCTS_agent::progressive_cut(Node* node){
-    const double confidence = 2;
-    for(int i=0; i<node->Ntotal; i++){
+    const static double confidence = 2;
+
+    Score lower_bound_score = node->Mean;
+    lower_bound_score -= confidence * sqrt(node->Variance);
+    int original_N = node->Ntotal;
+    for(int i=0; i<node->Nchild; i++){
         Node* child = get_child(node, i);
         Score branch_score = -child->Mean;
         branch_score += confidence * sqrt(child->Variance);
-        if(branch_score < node->Mean){
-            if(child->is_activated)
+        if(branch_score < lower_bound_score){
+            if(child->is_activated){
                 cut_child(node, child);
+                original_N -= child->Ntotal;
+            }
         }
         else{
-            if(!child->is_activated){
+            if(!(child->is_activated)){
                 connect_child(node, child);
+                original_N += child->Ntotal;
             }
         }
         // branch_score += confidence*child->st
     }
+    if(original_N != node->Ntotal){
+        debug << "\tERR: " << original_N <<"/" << node->Ntotal <<endl;
+    }
+    assert(original_N == node->Ntotal);
 }
+
+
+
+bool MCTS_agent::check_node(Node* node){
+    int Ntotal = 0;
+    for(int i=0; i<node->Nchild; i++){
+        Node* child = get_child(node, i);
+        if(child->is_activated)
+            Ntotal += child->Ntotal;
+    }
+    if(Ntotal > node->Ntotal or node->Ntotal - Ntotal >= 10){
+        debug << "node N:" << node->Ntotal <<", statistic N:" << Ntotal <<endl;
+        print_node(node);
+    }
+    assert(Ntotal <= node->Ntotal);
+    assert(node->Ntotal - Ntotal <= 10);
+    return true;
+}
+
 
 int MCTS_agent::update_AMAF_leaf(Node* leaf, Color leaf_color, Score avg_score, MOVE_RECORDER* move_recorder){
     Node* node_amaf = get_AMAF_Node(leaf);
@@ -350,6 +415,8 @@ int MCTS_agent::update_AMAF_leaf(Node* leaf, Color leaf_color, Score avg_score, 
     return node_N_amaf;
 }
 
+
+
 void MCTS_agent::back_propagation_RAVE(Node* leaf, Score avg_score, int total_n_simulate, int N_amaf){
     Node* cur = leaf;
     Node* cur_amaf = get_AMAF_Node(cur);
@@ -360,7 +427,11 @@ void MCTS_agent::back_propagation_RAVE(Node* leaf, Score avg_score, int total_n_
         cur = cur->parent;
         if(cur == nullptr)
             return;
+
         update_node(cur, avg_score, total_n_simulate);
+        progressive_cut(cur);
+        check_node(cur);
+
         Node* cur_amaf = get_AMAF_Node(cur);
         update_node(cur_amaf, avg_score, N_amaf);
 

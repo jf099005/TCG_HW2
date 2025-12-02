@@ -11,6 +11,12 @@
 
 class MCTS_agent{
     public:
+
+        //for debug
+        void print_node(Node* node);
+        bool check_node(Node* node);
+
+
         // MCTS_agent() = default;
 
         MCTS_agent(Color p_c, Position initial_pos, double initial_coeff = 1.0, int n_simulate_leaf = 5);
@@ -60,6 +66,9 @@ class MCTS_agent{
             }
 
             inline Node* get_child(Node* node, int child_idx){
+                // if(node->Nchild <= child_idx){
+                //     debug << "Nchild:" << node->Nchild << ", cid:" << child_idx <<endl;
+                // }
                 assert(node->Nchild > child_idx);
                 return Nodes + node->c_id[child_idx];
             }

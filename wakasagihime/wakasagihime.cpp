@@ -101,6 +101,8 @@ int main()
             agent.reset(pos.due_up(), pos, remain_moves);
             agent.MCTS_simulate(N_simulate);
 
+            agent.print_node(agent.root);
+
             Move nx_move = agent.opt_solution();
             debug << "mv:" << nx_move;
             debug << "N:" << agent.N << ", AMAF:" << agent.N_AMAF <<endl;

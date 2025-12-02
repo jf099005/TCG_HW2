@@ -1,5 +1,5 @@
 #include"endgame_evaluator.h"
-#include"board_analyzer.h"
+#include"../../BoardAnalyze/H/board_analyzer.h"
 
 int endgame_evaluator::evaluate(Position pos, Color solver_side){
     static const int C = 1000;
