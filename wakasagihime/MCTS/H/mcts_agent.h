@@ -11,7 +11,8 @@
 
 class MCTS_agent{
     public:
-
+        int total_cut = 0;
+        int total_reconnect = 0;
         //for debug
         void print_node(Node* node);
         bool check_node(Node* node);

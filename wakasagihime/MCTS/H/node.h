@@ -5,8 +5,8 @@
 #include "lib/marisa.h"
 #include "lib/types.h"
 #include "lib/helper.h"
-const int MaxChild = 100;
-const int MaxNode = 1000000;
+const int MaxChild = 40;
+const int MaxNode = 500000;
 
 using namespace std;
 
@@ -42,6 +42,7 @@ typedef struct MCT_node{
         sq_score_sum = 0;
         can_expand = 1;
         Mean = 0;
+        Variance = 1000;
         is_activated = true;
     }
     MCT_node(Color cur_color, int root_id){
@@ -56,7 +57,7 @@ typedef struct MCT_node{
         sq_score_sum = 0;
         can_expand = 1;
         Mean = 0;
-
+        Variance = 1000;
         is_activated = true;
     }
 
@@ -88,6 +89,7 @@ typedef struct MCT_node{
         can_expand = 1;
         move = child_move;
         Mean = 0;
+        Variance = 1000;
         is_activated = true;
     }
 

@@ -14,6 +14,10 @@
 #include"BoardAnalyze/H/board_analyzer.h"
 #endif
 
+#include <chrono>
+using namespace std::chrono;
+
+
 // #define MY_AGENT 1
 
 // Girls are preparing...
@@ -64,12 +68,15 @@ int main()
     int ab_depth = 8;
     int remain_moves = 32;
     int num_pieces = 32;
-    MCTS_agent agent(Red, pos_init, 10.0, 1);
+    MCTS_agent agent(Red, pos_init, 50.0, 10);
 
     while (getline(std::cin, line)) {
         Position pos(line);
         AlphaBetaEndgameSolver ab_solver(pos.due_up(), ab_depth);
-        
+    
+        auto start = high_resolution_clock::now();
+
+
         debug << pos;
         debug << "remain moves:" << remain_moves <<endl;
 
@@ -80,6 +87,9 @@ int main()
             remain_moves = 32;
             num_pieces = red_count + black_count;
         }
+        else{
+            remain_moves--;
+        }
 
         // if(num_black_pieces > black_count){
         //     num_black_pieces = black_count;
@@ -89,28 +99,44 @@ int main()
         // if(endgame != NO_COLOR and endgame == pos.due_up()){
         // remain_moves = 27;
         int opponent_count = (pos.due_up() != Red?red_count:black_count);
-        // opponent_count = 100;
+        opponent_count = 100;
         // remain_moves = 1;
-        if(opponent_count <= 3){
-            debug << "endgame mode\n";
-            ab_solver.Negamax(pos, ab_depth, remain_moves);
-            info << ab_solver.opt_solution;
-        }
-        else{
+
             debug << "mcts mode\n";
             agent.reset(pos.due_up(), pos, remain_moves);
-            agent.MCTS_simulate(N_simulate);
+            
+            agent.MCTS_simulate(5, 0.01);
+            debug << "initial beta: "<< agent.calculate_beta(agent.root) <<endl;
 
+            agent.MCTS_simulate(N_simulate, 1.0);
+
+            debug << "terminal beta: "<< agent.calculate_beta(agent.root) <<endl;
             agent.print_node(agent.root);
 
             Move nx_move = agent.opt_solution();
-            debug << "mv:" << nx_move;
-            debug << "N:" << agent.N << ", AMAF:" << agent.N_AMAF <<endl;
+            // debug << "mv:" << nx_move;
+            // debug << "N:" << agent.root->Ntotal << ", AMAF:" << \
+            //         agent.get_AMAF_Node(agent.root)->Ntotal <<endl;
+
+            debug <<"total cut:" << agent.total_cut << ", total reconnection:" << agent.total_reconnect <<endl;
+            debug << "winrate:" << agent.root->Mean <<", AMAF winrate:"<<\
+                    agent.get_AMAF_Node(agent.root)->Mean <<endl;
+            debug << nx_move<<endl;
+
+            auto stop = high_resolution_clock::now();
+            auto duration = duration_cast<microseconds>(stop - start);
+            debug << "time:" << double(duration.count())*microseconds::period::num/microseconds::period::den << endl;
+            debug << "node usage:" << agent.maximum_node_idx <<endl;
+            pos.do_move(nx_move);
+
 
             info << nx_move;
-        }
 
         remain_moves--;
+
+        if(pos.count(ALL_PIECES) != num_pieces){
+            remain_moves = 32;
+        }
 
         // return 0;
     }

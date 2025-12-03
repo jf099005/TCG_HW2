@@ -18,7 +18,7 @@ namespace pos_simulate{
     Move stone_power_greedy_strategy(const Position& pos, MoveList<> &moves);
     // Score simulate(Position pos);
     Score simulate_and_record(Position pos, Color player_color, MOVE_RECORDER* moves_record, int remain_moves = 30);
-
+    Color early_stop(Position pos);
 }
 
 #endif

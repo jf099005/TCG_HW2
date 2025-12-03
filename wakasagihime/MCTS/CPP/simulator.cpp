@@ -14,7 +14,7 @@ int pos_simulate::move_evaluate(const Position& pos, Move move){
     if( e != NO_PIECE){
         int score = capture_move_score;
         score += Piece_Value[e];
-        if(e == Cannon){
+        if(s == Cannon){
             score -= (Piece_Value[s] >> 1);
         }
         else{
@@ -27,8 +27,8 @@ int pos_simulate::move_evaluate(const Position& pos, Move move){
 }
 
 Move pos_simulate::stone_power_greedy_strategy(const Position& pos, MoveList<> &moves){
-    static long long move_scores[200];
-    static long long total_scores;
+    static unsigned long long move_scores[200];
+    static unsigned long long total_scores;
     total_scores = 0;
     for(int i=0; i< moves.size(); i++){
         move_scores[i] = move_evaluate(pos, moves[i]);
@@ -82,8 +82,8 @@ int max_piece_score(Position pos, Board pieces){
     for(Square sq: BoardView(pieces)){
         PieceType pt = pos.peek_piece_at(sq).type;
         if(pt != Cannon){
-            if(Piece_Value[pt] == mx)
-                score += mx;
+            // if(Piece_Value[pt] == mx)
+            //     score += mx;
             if(Piece_Value[pt] > mx){
                 mx = Piece_Value[pt];
                 score = mx;
@@ -97,6 +97,8 @@ int max_piece_score(Position pos, Board pieces){
 Score pos_simulate::simulate_and_record(Position pos, Color player_color, MOVE_RECORDER* move_recorder, int remain_moves){
     Position copy(pos);
     Color winner = copy.winner();
+
+
 
     // bool apply_early_stop = (early_stop(pos) == NO_COLOR);
 
@@ -127,7 +129,7 @@ Score pos_simulate::simulate_and_record(Position pos, Color player_color, MOVE_R
         //     winner = early_stop(copy);
     }
 
-    Score board_score = max_piece_score(copy, copy.pieces());
+    Score board_score = max_piece_score(copy, copy.pieces()) + double(remain_moves)/30;
 
     if (winner == pos.due_up()) {
         return board_score;
@@ -143,3 +145,39 @@ Score pos_simulate::simulate_and_record(Position pos, Color player_color, MOVE_R
     return 0;
 }
 
+Color pos_simulate::early_stop(Position pos){
+    if(pos.count(Red) > 3 or pos.count(Black) > 3)
+        return NO_COLOR;
+    
+    Board red_pieces = pos.pieces(Red);
+    Board black_pieces = pos.pieces(Black);
+
+    for(Square sq_r: BoardView(red_pieces)){
+        bool red_win = true;
+        PieceType r_type = pos.peek_piece_at(sq_r).type;
+        
+        if(r_type == Cannon)continue;
+
+        for(Square sq_b: BoardView(black_pieces)){
+            PieceType b_type = pos.peek_piece_at(sq_b).type;
+            red_win &= (r_type > b_type) and !(b_type > r_type);
+        }
+        if(red_win)
+            return Red;
+    }
+
+    for(Square sq_b: BoardView(black_pieces)){
+        bool black_win = true;
+        PieceType b_type = pos.peek_piece_at(sq_b).type;
+
+        if(b_type == Cannon)continue;
+
+        for(Square sq_r: BoardView(red_pieces)){
+            PieceType r_type = pos.peek_piece_at(sq_r).type;
+            black_win &= (b_type > r_type) and !(r_type > b_type);
+        }
+        if(black_win)
+            return Red;
+    }
+    return NO_COLOR;
+}
