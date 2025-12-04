@@ -114,9 +114,6 @@ int main()
             agent.print_node(agent.root);
 
             Move nx_move = agent.opt_solution();
-            // debug << "mv:" << nx_move;
-            // debug << "N:" << agent.root->Ntotal << ", AMAF:" << \
-            //         agent.get_AMAF_Node(agent.root)->Ntotal <<endl;
 
             debug <<"total cut:" << agent.total_cut << ", total reconnection:" << agent.total_reconnect <<endl;
             debug << "winrate:" << agent.root->Mean <<", AMAF winrate:"<<\

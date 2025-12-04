@@ -145,6 +145,7 @@ Score pos_simulate::simulate_and_record(Position pos, Color player_color, MOVE_R
     return 0;
 }
 
+//become slower
 Color pos_simulate::early_stop(Position pos){
     if(pos.count(Red) > 3 or pos.count(Black) > 3)
         return NO_COLOR;
