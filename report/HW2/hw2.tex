@@ -1,0 +1,105 @@
+\documentclass[a4paper, 12pt]{article}  %set doc type and font size
+\usepackage{fontspec}                   %allow setting fonts
+\usepackage{xeCJK}         
+\usepackage{amsmath}
+\newtheorem{theorem}{Theorem}
+\setCJKmainfont{Noto Sans CJK SC}             %call chinese package xeCJK
+% \setmainfont{Times New Roman}           %set English font
+
+% \XeTeXlinebreaklocale "zh"
+% \XeTeXlinebreakskip = 0pt plus 1pt
+
+
+\usepackage{algorithm}
+\usepackage[noend]{algpseudocode}
+
+\usepackage{mdframed}    % for frames
+\usepackage{xcolor}      % for colors
+
+\usepackage{amsthm}
+
+\usepackage{graphicx}
+
+\usepackage[most]{tcolorbox}
+\tcbset{
+  theorem style/.style={
+    enhanced,
+colback=blue!2!white,
+colframe=blue!40!white,
+    fonttitle=\bfseries,
+    boxrule=1pt,
+    arc=3pt,
+    outer arc=3pt,
+    coltitle=black,
+  }
+}
+
+% 定義「帶框定理」環境
+\newtcbtheorem[number within=section]{mytheorem}{Theorem}%
+{theorem style=blue}{th}
+
+
+\newtcbtheorem[number within=section]{problem}{Problem}%
+{enhanced,
+ colback=blue!3!white,
+ colframe=blue!50!white,
+ fonttitle=\bfseries,
+ boxrule=1pt,
+ arc=3pt,
+ coltitle=black}{prob}
+
+
+
+\title{電腦對局理論 Homework 2}
+\author{蔡平樂}
+\date{\today}
+
+
+\begin{document}
+\maketitle
+
+\section{Implementation detail}
+The following is the design be used at the final submission of the MCTS agent.
+
+\subsection{Simulation and improvement}
+For each single MCTS iteration, the agent will perform $10$ simulations, and use a PieceValue table to evaluate each move.
+
+\begin{algorithm}
+  \begin{algorithmic}[1]
+    \Procedure{MoveEvaluate}{move}
+      \State$s\gets move.from$
+      \State$e\gets move.to$
+      \If{$e\neq Null$}
+        \State$capture\_move\_value \gets PieceValue(e)$
+        \If{$s\neq{\rm Cannon}$}
+          \State$capture\_move\_value += \frac{PieceValue(s)}{2}$
+        \EndIf
+        \State \textbf{return $C\times capture\_move\_value$}
+      \EndIf
+      \State \textbf{return $basic\_move\_value$}
+    \EndProcedure
+  \end{algorithmic}
+\end{algorithm}
+
+$basic\_move\_value$ and $C$ are constants, which are 
+
+
+\subsection{RAVE}
+The Rapid Action Value Estimation method only being used at the leaf.
+More precisely, I create two types of Nodes, Nodes and Nodes\_AMAF, then update them respectively at a simulation
+
+\begin{algorithm}
+    \begin{algorithmic}
+        \Procedure{UpdateNode}{node, sim\_record}
+            
+        \EndProcedure
+    \end{algorithmic}
+\end{algorithm}
+
+\subsection{Evaluation function design}
+
+\section{Experiments}
+
+
+
+\end{document}

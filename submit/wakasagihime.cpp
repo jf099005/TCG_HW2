@@ -10,7 +10,6 @@
 #define USE_MCTS 1
 #ifdef USE_MCTS
 #include"mcts_agent.h"
-#include"AB_agent.h"
 #include"BoardAnalyze/H/board_analyzer.h"
 #endif
 
@@ -71,9 +70,7 @@ int main()
     MCTS_agent agent(Red, pos_init, 100.0, 10);
 
     while (getline(std::cin, line)) {
-        Position pos(line);
-        AlphaBetaEndgameSolver ab_solver(pos.due_up(), ab_depth);
-    
+        Position pos(line);    
         auto start = high_resolution_clock::now();
 
 
