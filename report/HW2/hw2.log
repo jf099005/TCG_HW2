@@ -1,4 +1,4 @@
-This is XeTeX, Version 3.141592653-2.6-0.999997 (MiKTeX 25.4) (preloaded format=xelatex 2025.10.10)  5 DEC 2025 12:14
+This is XeTeX, Version 3.141592653-2.6-0.999997 (MiKTeX 25.4) (preloaded format=xelatex 2025.10.10)  6 DEC 2025 22:46
 entering extended mode
  restricted \write18 enabled.
  file:line:error style messages enabled.
@@ -1009,20 +1009,41 @@ LaTeX Font Info:    Overwriting math alphabet `\mathtt' in version `bold'
 [1
 
 ]
+Overfull \hbox (3.39684pt too wide) in paragraph at lines 108--109
+[]\TU/lmr/m/n/12 AmafBackPropagation is identical with BackPropagation, but onl
+y update
+ []
 
-[2] (hw2.aux)
+
+LaTeX Warning: `!h' float specifier changed to `!ht'.
+
+
+
+[2]
+
+[3]
+Overfull \hbox (5.44482pt too wide) in paragraph at lines 234--235
+[]\TU/lmr/m/n/12 After this, the solver will viewed as PV.leaf performed AMAF_N
+_simulate
+ []
+
+
+
+[4]
+
+[5] (hw2.aux)
  ***********
 LaTeX2e <2025-06-01> patch level 1
 L3 programming layer <2022/08/05>
  ***********
  ) 
 Here is how much of TeX's memory you used:
- 24880 strings out of 405213
- 584805 string characters out of 5493499
- 1056642 words of memory out of 5000000
- 52811 multiletter control sequences out of 15000+600000
- 632325 words of font info for 80 fonts, out of 8000000 for 9000
+ 24902 strings out of 405213
+ 585213 string characters out of 5493499
+ 1061642 words of memory out of 5000000
+ 52832 multiletter control sequences out of 15000+600000
+ 632333 words of font info for 81 fonts, out of 8000000 for 9000
  0 hyphenation exceptions out of 8191
- 98i,6n,101p,523b,365s stack positions out of 10000i,1000n,20000p,200000b,200000s
+ 98i,8n,101p,523b,363s stack positions out of 10000i,1000n,20000p,200000b,200000s
 
-Output written on hw2.pdf (2 pages).
+Output written on hw2.pdf (5 pages).

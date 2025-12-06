@@ -59,12 +59,90 @@ colframe=blue!40!white,
 \maketitle
 
 \section{Implementation detail}
-The following is the design be used at the final submission of the MCTS agent.
+The following is the design of the code submission version solver.
+
+% I haven't implement the dymanic piece-value adjusting because the deadline, otherwise the value of king and Cannon should be vary substantially when the board change.
+
+\subsection{MCTS iteration}
+The MCTS iteration run as below:
+
+\begin{algorithm}[!h]
+  \begin{algorithmic}
+    \Procedure{MctsIteration}{}
+      \State PV $\gets$ Get\_PV()
+      \If{PV.state == Termination}
+        \State BackPropagation(PV.leaf, TerminationState, num\_simulate)
+        \State AmafBackPropagation(PV.leaf, TerminationState, num\_simulate)
+        \State \textbf{return}
+      \EndIf
+      \State expand(PV.leaf)
+      \State avg\_score $\gets 0$
+      \State sim\_records $\gets\{\}$
+      \For{$child\in Children(PV.leaf)$}
+        \State node\_score, record$\gets$ RandomSimulate(child.pos, N\_sim\_leaf)
+        \State sim\_records = sim\_record$\cup$ record
+        \State BackPropagation(child, node\_score, N\_sim\_leaf)
+        \State avg\_scores $+=$ (-node\_score)
+      \EndFor
+      \State avg\_scores $\gets \rm \frac{avg\_score}{Children(PV.leaf).size()}$
+      \State N\_amaf $\gets$ UpdateAmafLeaves(PV.leaf, avg\_score, sim\_records)
+      \State AmafBackPropagation(PV.leaf, avg\_scores, sim\_records)
+      \State cut\_node = PV.leaf
+      \While{cut\_node $\neq$ root}
+        \State ProgressivePruning(cur\_node)
+        \State cut\_node $\gets$ cut\_node.parent
+      \EndWhile
+      
+      \EndProcedure
+  \end{algorithmic}
+\end{algorithm}
+
+\newpage
+
+The agent maintain two types of nodes, calling Nodes and AMAF\_Nodes, the structure of two type of nodes are identical, only the values in the nodes are differ, and therefore we can apply the same updating function to both.
+
+RamdonSimulate(pos, N) will perform N simulations on pos, and return its average and record the moves happened at the simulation.
+
+N\_sim\_leaf is the number of simulations at the leaf, BackPropagation will assume we perform $N\_sim\_leaf$ simulations, and obtain the return value node\_score each times, then record the solution to the PV. Which will decrease the variance, but the performance is not change too much in total.
+
+AmafBackPropagation is identical with BackPropagation, but only update the AMAF nodes. The UpdateAMafLeaves function will update all AMAF nodes of the children w.r.t PV.leaf.
+
+In the following parts, I use a human designed PieceValue Table as below
+
+\begin{table}[!h]
+  \centering
+  \begin{tabular}{|c|c|c|c|c|c|c|}
+    將 & 士 & 象 & 車 & 馬 & 包 & 卒\\
+    \hline
+    7 & 8 & 6 & 5 & 3 & 9 & 1
+  \end{tabular}
+
+  \title{Pieces Value}
+\end{table}
 
 \subsection{Simulation and improvement}
-For each single MCTS iteration, the agent will perform $10$ simulations, and use a PieceValue table to evaluate each move.
+For each single MCTS iteration, the agent will perform $10$ simulations.
 
-\begin{algorithm}
+\begin{algorithm}[!h]
+  \begin{algorithmic}[1]
+    \Procedure{RandomSimulate}{pos}
+      \While{$pos\rm\ is\ not\ terminated$}
+        \State$Moves\gets gen\_move(pos)$
+        \For{$mv\in Moves$}
+          \State$W_{mv}\gets MoveEvaluate(mv)$
+        \EndFor
+        \State $next\gets sample(Moves)$ \Comment{w.r.t ${P}(next = mv) = \frac{W_{mv}}{\sum_{m\in Moves} W_{m}}$}
+        \State{$pos$.do\_move(next)}
+      \EndWhile
+      \State \textbf{return} TerminationBoardEvaluate(pos)
+    \EndProcedure
+  \end{algorithmic}
+\end{algorithm}
+
+
+In the simulation, the next move is randomly selected with respect to the distribution of $MoveEvaluate$. This operation make it slower about $10$ times, but largely improve the simulation quality.
+
+\begin{algorithm}[!h]
   \begin{algorithmic}[1]
     \Procedure{MoveEvaluate}{move}
       \State$s\gets move.from$
@@ -81,22 +159,105 @@ For each single MCTS iteration, the agent will perform $10$ simulations, and use
   \end{algorithmic}
 \end{algorithm}
 
-$basic\_move\_value$ and $C$ are constants, which are 
+$basic\_move\_value$ and $C$ are constants, which are setting as $10$ and $100$ respectively.
 
+At initial experiment, rather than the MCS model of $1000$ simulations for each single move, the MCTS model with only $100$ simulations totally can win the MCS model stably. Therefore the modification is worthy.
+
+
+\subsection{Termination board Evaluate}
+At the beginning, I used the total summation of all piece values remaining in the board. However, It will make the algorithm prefer to maintain more pieces on the board, not to remain the largest piece.
+
+For example, as the graph below:
+
+\begin{table}[!h]
+  \begin{tabular}{|c|c|c|c|c|c|c|c|}
+    \hline
+    卒&&&&&&&\\
+    \hline
+    &&&卒&&&&\\
+    \hline
+    &&&象&&馬&&\\
+    \hline
+    &&車&&&&車&\\
+    \hline
+  \end{tabular}
+  \begin{tabular}{|c|c|c|c|c|c|c|c|}
+    \hline
+    &&&&&&&\\
+    \hline
+    &&&士&&&&\\
+    \hline
+    &&&&&&&\\
+    \hline
+    &&&&&士&&\\
+    \hline
+  \end{tabular}
+\end{table}
+
+The left board has $21$ points, and the second board only has $16$ points due to the small number of pieces. Nevertheless, the huge number of small pieces is useless in CDC, therefore the black player in the second board have larger advantage.
+
+Therefore, we use a simple evalation function for the termination board:
+
+\begin{algorithmic}
+  \begin{algorithm}
+    \Procedure{TerminationBoardEvaluate}{pos}
+      \State \textbf{return} $\max_{p\in pos.pieces()} PieceValue(p)$
+    \EndProcedure
+  \end{algorithm}
+\end{algorithmic}
+
+Which made a huge improvement to the strength of the algorithm, the detail is shown at the Experiments part.
+
+
+\newpage
 
 \subsection{RAVE}
-The Rapid Action Value Estimation method only being used at the leaf.
-More precisely, I create two types of Nodes, Nodes and Nodes\_AMAF, then update them respectively at a simulation
+The Rapid Action Value Estimation method used at the leaf.
+I use the following function to update the AMAF leaves, calculate the equivalent times of simulation in AMAF tree and return.
+
 
 \begin{algorithm}
     \begin{algorithmic}
-        \Procedure{UpdateNode}{node, sim\_record}
-            
+        \Procedure{UpdateAmafLeaves}{leaf, avg\_score, sim\_record}
+          \State AMAF\_N\_simulate $\gets$ 0
+          \For{child$\in$ Children(leaf)}
+            \If{leaf.Count(child.move) >0 }
+              \State update\_node(child, avg\_score, leaf.Count(child.move))
+              \State AMAF\_N\_simulate += leaf.Count(child.move)
+              \EndIf
+          \EndFor     
+          \State \textbf{return} AMAF\_N\_simulate     
         \EndProcedure
     \end{algorithmic}
 \end{algorithm}
 
-\subsection{Evaluation function design}
+After this, the solver will viewed as PV.leaf performed AMAF\_N\_simulate simulations and obtain score avg\_score each times, and update the AMAF tree w.r.t this.
+
+\subsection{Progressive Pruning}
+The Progressive Pruning is used at PV in each iterations.
+\begin{algorithm}
+  \begin{algorithmic}
+    \Procedure{ProgressivePruning}{node}
+      \State$score_{\min} = node.mean-r\times node.std$
+      \For{$child\in Children(node)$}
+        \State$score_{child} = child.mean + r\times child.std$
+        \If{$score_{child} < score_{\min}$}
+          \If{$child$.activated}
+            \State deactivate($child$)
+          \EndIf
+        \Else
+          \If{$child$.deactivated}
+            \State activate($child$)
+          \EndIf
+        \EndIf
+      \EndFor
+    \EndProcedure
+  \end{algorithmic}
+\end{algorithm}
+
+The pruning is performed with respect to the original MCTS value, not AMAF or RAVE value, and the pruning is happened after the simulation and BackPropagation ended.
+
+\newpage
 
 \section{Experiments}
 
